@@ -1,4 +1,5 @@
 # Creates a new branch when assigning an issue to yourself
+name: "Branch on Issue Assignment"
 on:
   # The issues event below is only needed for the default (auto) mode,
   # you can remove it otherwise
