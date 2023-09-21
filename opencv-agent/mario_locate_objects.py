@@ -15,7 +15,7 @@ import os
 ################################################################################
 
 # change these values if you want more/less printing
-PRINT_GRID      = True
+PRINT_GRID      = False
 PRINT_LOCATIONS = False
 
 # If printing the grid doesn't display in an understandable way, change the
@@ -222,7 +222,8 @@ def _locate_pipe(screen, threshold=MATCH_THRESHOLD):
 
 def locate_objects(screen, mario_status):
     # convert to greyscale
-    screen = cv.cvtColor(screen, cv.COLOR_BGR2GRAY)
+    # NOT NEEDED - DONE IN THE ENV TO SPEED UP PROCESSING
+    # screen = cv.cvtColor(screen, cv.COLOR_BGR2GRAY)
 
     # iterate through our templates data structure
     object_locations = {}
@@ -257,6 +258,9 @@ def locate_objects(screen, mario_status):
 # GETTING INFORMATION AND CHOOSING AN ACTION
 
 def make_action(screen, info, step, env, prev_action):
+    # Just return previous action for 10 steps
+    if step % 10 != 0: return prev_action
+    
     mario_status = info["status"]
     object_locations = locate_objects(screen, mario_status)
 
@@ -292,13 +296,7 @@ def make_action(screen, info, step, env, prev_action):
     # List of locations of items: (so far, it only finds mushrooms)
     item_locations = object_locations["item"]
 
-    # This is the format of the lists of locations:
-    # ((x_coordinate, y_coordinate), (object_width, object_height), object_name)
-    #
-    # x_coordinate and y_coordinate are the top left corner of the object
-    #
-    # For example, the enemy_locations list might look like this:
-    # [((161, 193), (16, 16), 'goomba'), ((175, 193), (16, 16), 'goomba')]
+
     
     if PRINT_LOCATIONS:
         # To get the information out of a list:
@@ -351,31 +349,27 @@ def make_action(screen, info, step, env, prev_action):
     #              action = 1 means press 'right' button
     #              action = 2 means press 'right' and 'A' buttons at the same time
 
-    if step % 10 == 0:
-        # I have no strategy at the moment, so I'll choose a random action.
-        action = env.action_space.sample()
-        return action
-    else:
-        # With a random agent, I found that choosing the same random action
-        # 10 times in a row leads to slightly better performance than choosing
-        # a new random action every step.
-        return prev_action
+    # I have no strategy at the moment, so I'll choose a random action.
+    action = env.action_space.sample()
+    return action
 
 ################################################################################
 
-env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
-env = JoypadSpace(env, SIMPLE_MOVEMENT)
 
-obs = None
-done = True
-env.reset()
-for step in range(100000):
-    if obs is not None:
-        action = make_action(obs, info, step, env, action)
-    else:
-        action = env.action_space.sample()
-    obs, reward, terminated, truncated, info = env.step(action)
-    done = terminated or truncated
-    if done:
-        env.reset()
-env.close()
+if(__name__ == "__main__"):
+    env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
+    env = JoypadSpace(env, SIMPLE_MOVEMENT)
+
+    obs = None
+    done = True
+    env.reset()
+    for step in range(100000):
+        if obs is not None:
+            action = make_action(obs, info, step, env, action)
+        else:
+            action = env.action_space.sample()
+        obs, reward, terminated, truncated, info = env.step(action)
+        done = terminated or truncated
+        if done:
+            env.reset()
+    env.close()
