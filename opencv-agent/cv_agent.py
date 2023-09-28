@@ -15,8 +15,8 @@ class CVAgent:
     # the current occurrences of the game
     class LastState:
         last_action = None
+        mario_world_coords = None
         mario_status = None
-        mario_locations = ()
         enemy_locations = ()
         block_locations = ()
         item_locations  = ()
@@ -24,10 +24,13 @@ class CVAgent:
     last_state = LastState()
     env = None
     STEPS_PER_ACTION = 5
-    jumping = False # State of mario if he is jumping
+    GOOMBA_RANGE = 55
+    KOOPA_RANGE = 55
+    jumping_hole = False # State of mario if he is jumping a hole
+    jumping_enemy = False
 
     def __init__(self):
-        self.env = gym.make("SuperMarioBros-1-2-v0", apply_api_compatibility=True, render_mode="human")
+        self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True, render_mode="human")
         self.env = gym.wrappers.GrayScaleObservation(self.env)
         self.env = JoypadSpace(self.env, SIMPLE_MOVEMENT)
 
@@ -60,6 +63,26 @@ class CVAgent:
             return False
         return False
 
+    # Given enemy locations, marios location and marios displacement, calculate
+    # whether the enemy is a risk to marios life, and if so return True
+    def __check_enemies(self, enemy_locations, mario_locations, mario_disp):
+        for enemy in enemy_locations:
+            # calculate the 'bottom left' corner of the sprites
+            enemy_y = enemy[0][1] - enemy[1][1]
+            mario_y = mario_locations[0][0][1] - mario_locations[0][1][1]
+            y_range = 20 # how close in y-range the mario and enemy can be to detect they are on the same 'height'
+            if(abs(enemy_y - mario_y) in range(y_range)):
+                x_range = 10 # check 10 pixels left and right of previous frame to find enemy
+                prev_enemies = self.last_state.enemy_locations
+                for prev_enemy in prev_enemies: # search through previous frames enemies to find displacement
+                    enemy_disp = (enemy[0][0] - prev_enemy[0][0], enemy[0][1] - prev_enemy[0][1])
+                    if(prev_enemy[0][1] == enemy[0][1] and abs(enemy_disp[0]) <= x_range): # checks to see if previous enemy is the same as current
+                        if(mario_disp[0] * enemy_disp[0] <= 0): # mario travelling towards enemy
+                            if(enemy[2] == 'goomba'): jump_range = self.GOOMBA_RANGE # How close (in pixels) mario should get before jumping
+                            elif(enemy[2] == 'koopa'): jump_range = self.KOOPA_RANGE
+                            if(enemy[0][0] - (mario_locations[0][0][0] + mario_locations[0][1][0]) in range(jump_range)):
+                                return True
+
     # Make action function adapted from Lauren Gee's work
     # In mario_locate_objects.py
     def __make_action(self, screen, info, step, prev_action):
@@ -72,8 +95,9 @@ class CVAgent:
         # a choice on the next move
         elif(game_step == self.STEPS_PER_ACTION - 3):
             self.last_state.last_action = prev_action
+            self.last_state.mario_world_coords = (info["x_pos"], info["y_pos"])
             self.last_state.mario_status = info["status"]
-            
+
             # This is the format of the lists of locations:
             # ((x_coordinate, y_coordinate), (object_width, object_height), object_name)
             #
@@ -82,14 +106,14 @@ class CVAgent:
             # For example, the enemy_locations list might look like this:
             # [((161, 193), (16, 16), 'goomba'), ((175, 193), (16, 16), 'goomba')]
             object_locations = mario_locate_objects.locate_objects(screen, self.last_state.mario_status)
-            self.last_state.mario_locations = object_locations["mario"]
             self.last_state.enemy_locations = object_locations["enemy"]
             self.last_state.block_locations = object_locations["block"]
             self.last_state.item_locations  = object_locations["item"]
+
             # Grabbed the info to store for next action, now return prev_action
             return prev_action
+        
         elif(game_step == 0):
-            inform = info
             mario_status = info["status"]
             object_locations = mario_locate_objects.locate_objects(screen, mario_status)
 
@@ -98,7 +122,7 @@ class CVAgent:
             block_locations = object_locations["block"]
             item_locations = object_locations["item"]
 
-            if(len(mario_locations) != 1 or len(self.last_state.mario_locations) != 1):
+            if(len(mario_locations) != 1):
                 # Mario cannot be found, return action 1 for now
                 action = 1
                 return action
@@ -106,39 +130,24 @@ class CVAgent:
             # state = self.__get_mario_state(mario_locations[0], screen)
             # Secondary check for mario being on ground, as the sprites can be inconsistent
             block_under_mario = self.__block_under_mario(block_locations, mario_locations[0])
-            if(block_under_mario != None):
-                state = 'G'
+            if(block_under_mario != None): state = 'G'
             else: state = 'A'
 
             if(prev_action in [2,5] and state == 'G'): return 1 # run right to allow jump again
 
-            mario_prev_loc = self.last_state.mario_locations[0][0]
             # Mario displacement based on previous frames
-            mario_disp = (mario_locations[0][0][0] - mario_prev_loc[0], mario_locations[0][0][1] - mario_prev_loc[1])
+            mario_disp = (info["x_pos"] - self.last_state.mario_world_coords[0], info["y_pos"] - self.last_state.mario_world_coords[1])
             # If mario on ground, follow decision tree
             if (state == 'G'):
-                if(self.jumping): self.jumping = False # no longer if on ground again
-                # Check for enemies
-                for enemy in enemy_locations:
-                    # calculate the 'bottom left' corner of the sprites
-                    enemy_y = enemy[0][1] - enemy[1][1]
-                    mario_y = mario_locations[0][0][1] - mario_locations[0][1][1]
-                    y_range = 20 # how close in y-range the mario and enemy can be to detect they are on the same 'height'
-                    if(abs(enemy_y - mario_y) in range(y_range)):
-                        x_range = 10 # check 10 pixels left and right of previous frame to find enemy
-                        prev_enemies = self.last_state.enemy_locations
-                        for prev_enemy in prev_enemies: # search through previous frames enemies to find displacement
-                            enemy_disp = (enemy[0][0] - prev_enemy[0][0], enemy[0][1] - prev_enemy[0][1])
-                            if(prev_enemy[0][1] == enemy[0][1] and abs(enemy_disp[0]) <= x_range): # checks to see if previous enemy is the same as current
-                                if(mario_disp[0] * enemy_disp[0] <= 0): # mario travelling towards enemy
-                                    if(enemy[2] == 'goomba'): jump_range = 60 # How close (in pixels) mario should get before jumping
-                                    elif(enemy[2] == 'koopa'): jump_range = 100
-                                    if(enemy[0][0] - mario_locations[0][0][0] in range(jump_range)): 
-                                        action = 2
-                                        self.jumping = True
-                                        return action
-                
-                
+                if(self.jumping_hole): self.jumping_hole = False # no longer jumping if on ground again
+                if(self.jumping_enemy): self.jumping_enemy = False
+
+                enemy_found = self.__check_enemies(enemy_locations, mario_locations, mario_disp)
+                if(enemy_found):
+                    action = 2
+                    self.jumping_enemy = True
+                    return action
+
                 for block in block_locations:
                     # Check for pipes
                     if(block[2] == 'pipe'):
@@ -161,12 +170,26 @@ class CVAgent:
                 # Check for hole in ground in front of mario
                 hole = self.__find_hole(block_locations, mario_locations[0])
                 if(hole):
-                    self.jumping = True
+                    self.jumping_hole = True
                     action = 2
                     return action
+
             # state: Air
             elif state == 'A':
-                if(mario_disp[1] < 0):
+                # jumping over hole
+                if(self.jumping_hole): 
+                    action = 2
+                    return action
+                
+                # jumping over enemy
+                if(self.jumping_enemy):
+                    for enemy in enemy_locations:
+                        if(abs(mario_locations[0][0][0] - enemy[0][0]) in range(self.GOOMBA_RANGE)):
+                            if(mario_locations[0][0][1] - mario_locations[0][1][1] >= (enemy[0][1] + enemy[1][1])):
+                                action = 2
+                                return action
+
+                if(mario_disp[1] > 0):
                     for block in block_locations:
                         # Check for pipes
                         if(block[2] == 'pipe'):
@@ -187,21 +210,18 @@ class CVAgent:
                                 if(mario_locations[0][0][1] + (mario_locations[0][1][1] / 2) in range(block[0][1], block[0][1] + block[1][1])):
                                     action = 5
                                     return action
-                # jumping over hole or enemy - not pipe or small platform
-                if(self.jumping): 
-                    action = 2
-                    return action
-            
+  
             action = 1
             return action
 
 
-    def play(self):
+    def play(self, debug=False):
         obs = None
         done = True
         self.env.reset()
         step = 0
         run_score = 0
+        if(debug): print("Running in debug mode")
         while True:
             if obs is not None:
                 action = self.__make_action(obs, info, step, action)
@@ -211,7 +231,7 @@ class CVAgent:
             run_score += reward
             done = terminated or truncated
             if done:
-                print(f"Reward for run: {run_score}")
+                if(debug): print(f"Reward for run: {run_score}")
                 step = 0
                 run_score = 0
                 self.env.reset()
