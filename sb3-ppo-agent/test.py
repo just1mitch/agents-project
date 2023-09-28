@@ -4,7 +4,7 @@ import gym
 import numpy as np
 from nes_py.wrappers import JoypadSpace
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
-from gym.wrappers import GrayScaleObservation
+from gym.wrappers import GrayScaleObservation, ResizeObservation
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecFrameStack
@@ -76,9 +76,11 @@ def load_and_run_model():
     test_env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="human")
     test_env = JoypadSpace(test_env, SIMPLE_MOVEMENT)
     test_env = RemoveSeedWrapper(test_env)
-    test_env = MarioRewardShapingWrapper(test_env)
+    #test_env = MarioRewardShapingWrapper(test_env)
     test_env = GrayScaleObservation(test_env)
-    test_env = CustomReshapeAndResizeObs(test_env, shape=(255, 255))
+    #Resize to 128
+    test_env = ResizeObservation(test_env, shape=(128, 128))
+    test_env = CustomReshapeAndResizeObs(test_env, shape=(128, 128))
     # Vectorized environment for Stable Baselines3
     test_env = DummyVecEnv([lambda: test_env])
     n_stack = 4

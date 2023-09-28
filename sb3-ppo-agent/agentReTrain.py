@@ -22,7 +22,7 @@ def get_model_path():
     file_path = filedialog.askopenfilename(title="Select the Model", filetypes=[('Model Files', '*.zip')])
     return file_path
 
-RESUME_TRAINING = False
+RESUME_TRAINING = True
 MODEL_PATH = "ppo_mario"
 from gym.wrappers import ResizeObservation
 
@@ -44,44 +44,48 @@ class RemoveSeedWrapper(gym.Wrapper):
         kwargs.pop('options', None)
         return super().reset(**kwargs)
 
-class MarioRewardShapingWrapper(gym.Wrapper):
-    def __init__(self, env):
-        super(MarioRewardShapingWrapper, self).__init__(env)
-        self.last_x_pos = 0
-     #   self.max_x_pos = 0
+class EnhancedRewardWrapper(gym.Wrapper):
+    def __init__(self, env, new_max_x_bonus=5, stuck_penalty=-3, stuck_threshold=100):
+        super(EnhancedRewardWrapper, self).__init__(env)
+        self.max_x_pos = float('-inf')  # Keep track of the maximum x position reached
+        self.last_x_pos = None  # Keep track of the last x position
+        self.stuck_counter = 0  # Counter to check if Mario is stuck
+        # Bonus for reaching a new maximum x position
+        self.new_max_x_bonus = new_max_x_bonus
+        # Penalty for staying in the same x position for too long
+        self.stuck_penalty = stuck_penalty
+        # Number of frames to consider Mario as stuck
+        self.stuck_threshold = stuck_threshold
 
     def reset(self, **kwargs):
-        self.last_x_pos = 0
-        return self.env.reset(**kwargs)
+        obs = super().reset(**kwargs)
+        self.max_x_pos = float('-inf')
+        self.last_x_pos = None
+        self.stuck_counter = 0
+        return obs
 
     def step(self, action):
-        state, reward, done, truncated, info = self.env.step(action)
-        x_pos = info.get('x_pos', 0)
+        obs, reward, done, truncated, info = super().step(action)
 
-        # Give a small reward for moving right
-     #   reward += (x_pos - self.last_x_pos) * 0.0001
+        x_pos = info['x_pos'] 
 
-        # Give a large reward for finishing the level
-        if info.get('flag_get', False):
-            reward += 100
+        # Bonus for new max x position
+        if x_pos > self.max_x_pos:
+            reward += self.new_max_x_bonus
+            self.max_x_pos = x_pos
 
-        # Give a bonus reward for reaching further than 1600 on the X
-        if x_pos > 1650:
-            reward += 2
-        # Give incremental bonus for reaching further than 1600 on the X
-        if x_pos > 2300:
-            reward += 5
-        
-        if x_pos > 2800:
-            reward += 10
-       # if x_pos > self.max_x_pos:
-      #      reward += 1
-    #        self.max_x_pos = x_pos
-        
-        # Update the last x position
-        self.last_x_pos = x_pos
+        # Check if Mario is stuck
+        if x_pos == self.last_x_pos:
+            self.stuck_counter += 1
+            if self.stuck_counter >= self.stuck_threshold:
+                reward += self.stuck_penalty
+                self.stuck_counter = 0  # Reset counter after applying penalty
+        else:
+            self.stuck_counter = 0  # Reset counter if Mario moved
 
-        return state, reward, done, truncated, info
+        self.last_x_pos = x_pos  # Update the last x position for the next step
+
+        return obs, reward, done, truncated, info
 
 if __name__ == "__main__":
 # Helper function to create environment
@@ -90,30 +94,29 @@ if __name__ == "__main__":
             env = gym.make(env_id, apply_api_compatibility=True)
             env = JoypadSpace(env, SIMPLE_MOVEMENT)
             env = GrayScaleObservation(env)
-            env = CustomReshapeAndResizeObs(env, shape=(255, 255))
-            env = MarioRewardShapingWrapper(env)
+            env = ResizeObservation(env, 128)
+            env = CustomReshapeAndResizeObs(env, shape=(128, 128))
+            env = EnhancedRewardWrapper(env)
             env = RemoveSeedWrapper(env)
             print(env.observation_space.shape)
             return env
         return _init
+    
     class TrainAndLoggingCallback(BaseCallback):
-        def __init__(self, check_freq, save_path, eval_env, n_eval_episodes=10, verbose=1):
+        def __init__(self, check_freq, save_path, verbose=1):
             super(TrainAndLoggingCallback, self).__init__(verbose)
             self.check_freq = check_freq
             self.save_path = save_path
-            self.best_mean_reward = -float("inf")
-            self.eval_env = eval_env
-            self.n_eval_episodes = n_eval_episodes
-
+            
         def _init_callback(self):
             if self.save_path is not None:
                 os.makedirs(self.save_path, exist_ok=True)
-
+        
         def _on_step(self):
             if self.n_calls % self.check_freq == 0:
-
-                regular_save_path = os.path.join(self.save_path, 'model_{}'.format(self.n_calls))
-                self.model.save(regular_save_path)
+                model_path = os.path.join(self.save_path, 'best_model_{}'.format(self.n_calls))
+                self.model.save(model_path)
+            
             return True
 
     class SaveOnBestTrainingRewardCallback(BaseCallback):
@@ -143,12 +146,19 @@ if __name__ == "__main__":
                             print(f"Saving new best model to {self.save_path}")
                         self.model.save(self.save_path)
             return True   
+            
+
+
     CHECKPOINT_DIR = './train17/'
     LOG_DIR = './logs/'
     # Environment setup
+
+
     env_id = 'SuperMarioBros-v0'
     num_cpu = 2  # Number of processes to use
-    env = VecMonitor(SubprocVecEnv([make_env(env_id, i) for i in range(num_cpu)]), LOG_DIR)
+    env = make_env(env_id, 0)()
+    env = VecMonitor(DummyVecEnv([lambda: env]), LOG_DIR)
+    env = VecMonitor(env, LOG_DIR)
 
     # Frame stacking with 4 frames
     n_stack = 4
@@ -165,16 +175,14 @@ if __name__ == "__main__":
         "features_extractor_kwargs": {"features_dim": 512},
         "normalize_images": False
     }
-    eval_env = make_env('SuperMarioBros-v0', 99)()  # Create a separate environment for evaluation
-    eval_env = DummyVecEnv([lambda: eval_env])
-    n_stack = 4
-    eval_env = VecFrameStack(eval_env, n_stack=n_stack)
+    # eval_env = make_env('SuperMarioBros-v0', 99)()  # Create a separate environment for evaluation
+    # eval_env = DummyVecEnv([lambda: eval_env])
+    # n_stack = 4
+    # eval_env = VecFrameStack(eval_env, n_stack=n_stack)
     # Initialize callbacks and directories
 
-    callback = TrainAndLoggingCallback(check_freq=10000, save_path=CHECKPOINT_DIR, eval_env=eval_env, verbose=1)
-    callback1 = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=LOG_DIR)
-
-    print(eval_env.observation_space.shape)
+    callback = TrainAndLoggingCallback(check_freq=25_000, save_path=CHECKPOINT_DIR, verbose=1)
+    callback1 = SaveOnBestTrainingRewardCallback(check_freq=5000, log_dir=LOG_DIR)
     # Create the model
 
     if RESUME_TRAINING:

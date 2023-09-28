@@ -34,7 +34,7 @@ def evaluate_model(file_path, episodes=10):
     env = JoypadSpace(env, SIMPLE_MOVEMENT)
     env = RemoveSeedWrapper(env)
     env = GrayScaleObservation(env)
-    env = CustomReshapeAndResizeObs(env, shape=(84, 84))
+    env = CustomReshapeAndResizeObs(env, shape=(128, 128))
     env = DummyVecEnv([lambda: env])
     env = VecFrameStack(env, n_stack=4)
     
