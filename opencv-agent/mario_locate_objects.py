@@ -52,7 +52,7 @@ image_files = {
         # images for fireball mario.
     },
     "enemy": {
-        "goomba": ["goomba.png"],
+        "goomba": ["goomba.png", "goomba2.png"],
         "koopa": ["koopaA.png", "koopaB.png"],
     },
     "block": {
@@ -182,7 +182,7 @@ def _locate_object(screen, templates, stop_early=False, threshold=MATCH_THRESHOL
     locations = {}
     for template, mask, dimensions in templates:
         results = cv.matchTemplate(screen, template, cv.TM_CCOEFF_NORMED, mask=mask)
-        locs = np.where(results >= threshold)
+        locs = np.where((results >= threshold) & (results != np.inf))
         for y, x in zip(*locs):
             locations[(x, y)] = dimensions
 
