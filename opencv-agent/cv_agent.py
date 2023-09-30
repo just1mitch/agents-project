@@ -25,7 +25,7 @@ class CVAgent:
     env = None
     STEPS_PER_ACTION = 5
     GOOMBA_RANGE = 55
-    KOOPA_RANGE = 55
+    KOOPA_RANGE = 40
     jumping_hole = False # State of mario if he is jumping a hole
     jumping_enemy = False
 
