@@ -7,7 +7,6 @@ import numpy as np
 
 
 
-
 # Main game playing agent
 class CVAgent:
     # A class holding information of the last state of the game
@@ -22,7 +21,8 @@ class CVAgent:
     
     last_state = LastState()
     env = None
-    STEPS_PER_ACTION = 10
+    DEBUG = False
+    STEPS_PER_ACTION = 5
     GOOMBA_RANGE = 55
     KOOPA_RANGE = 70
     SHELL_RANGE = 40
@@ -64,6 +64,7 @@ class CVAgent:
                     continue # found a block ahead
                 else:
                     # hole found
+                    if(self.DEBUG): print(f"Hole found in front of mario {mario_location[0]}: {block[0]}")
                     return True
             # Found no holes, return empty list
             return False
@@ -113,6 +114,7 @@ class CVAgent:
                                 jump_range = self.SHELL_RANGE # if koopa shell is returning to hit mario
                             if(enemy[0][0] - (mario_locations[0][0][0] + mario_locations[0][1][0]) in range(jump_range)):
                                 if(enemy[2] == 'koopa'): self.jumping_koopa = (True, 0)
+                                if(self.DEBUG): print(f"Reacting to enemy {enemy[2]}: {enemy[0]}")
                                 return True
 
     # Action function adapted from Lauren Gee's work
@@ -192,6 +194,7 @@ class CVAgent:
                         mario_to_pipe = block[0][0] - mario_locations[0][0][0]
                         if(mario_to_pipe in range(pipe_range[0], pipe_range[1])):
                             # note - by doing (block - mario) we eliminate pipes that are to the left of mario
+                            if(self.DEBUG): print(f"Reacting to pipe: {block[0]}")
                             action = 2
                             return action
                     elif(enemy_locations == [] and block[2] == 'question_block'):
@@ -199,6 +202,7 @@ class CVAgent:
                         mario_to_question = block[0][0] - mario_locations[0][0][0]
                         if(mario_to_question in range(question_range[0], question_range[1])):
                             if(mario_locations[0][0][1] - block[0][1] in range(10, 100)): # within y range
+                                if(self.DEBUG): print(f"Reacting to question block: {block[0]}")
                                 return 2 # jump to hit question block
                     # Check if need to jump over a block
                     else:
@@ -206,6 +210,7 @@ class CVAgent:
                         if(block[0][0] - mario_locations[0][0][0] in range(block_range[0], block_range[1])):
                             # if halfway through mario cuts through block
                             if(mario_locations[0][0][1] + (mario_locations[0][1][1] / 2) in range(block[0][1], block[0][1] + block[1][1])):
+                                if(self.DEBUG): print(f"Reacting to block in front of mario: {block[0]}")
                                 action = 2
                                 return action
                         
@@ -266,6 +271,7 @@ class CVAgent:
         run_score = 0
         if(debug): 
             print("Running in debug mode")
+            self.DEBUG = True
         while True:
             if obs is not None:
                 action = self.__make_action(obs, info, step, action)
@@ -275,9 +281,15 @@ class CVAgent:
             run_score += reward
             done = terminated or truncated
             if done:
-                if(debug): print(f"Reward for run: {run_score}")
+                if(self.DEBUG): print(f"Reward for run: {run_score}")
                 step = 0
                 run_score = 0
                 self.env.reset()
             step += 1
         self.env.close()
+
+
+agent = CVAgent()
+
+if(__name__ == "__main__"):
+    agent.play(debug=True)
