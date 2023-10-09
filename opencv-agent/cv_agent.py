@@ -19,17 +19,22 @@ class CVAgent:
         mario_status = None
         enemy_locations = ()
         block_locations = ()
-        item_locations  = ()
     
     last_state = LastState()
     env = None
-    STEPS_PER_ACTION = 5
+    STEPS_PER_ACTION = 10
     GOOMBA_RANGE = 55
-    KOOPA_RANGE = 40
+    KOOPA_RANGE = 70
     SHELL_RANGE = 40
+    
     jumping_hole = False # State of mario if he is jumping a hole
     jumping_enemy = False
+    # Specifically for koopas - boolean is true if in loop for squashing koopa
+    # Second value is a tracker of the sequence timeline
+    jumping_koopa = (False, 0) 
+    SEQ_LENGTH = 11
 
+    
     def __init__(self):
         self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True, render_mode="human")
         self.env = gym.wrappers.GrayScaleObservation(self.env)
@@ -64,6 +69,29 @@ class CVAgent:
             return False
         return False
 
+    # special action sequence for koopas, to be able to shoot the shells forwards
+    def __jump_koopa(self, state):
+        if(self.jumping_koopa[0] == True):
+            if(self.jumping_koopa[1] < self.SEQ_LENGTH - 6): # Frames 0-5
+                # Phase 1: stopping momentum to jump on koopa
+                self.jumping_koopa = (True, self.jumping_koopa[1]+1)
+                action = 0
+                return action
+            elif (self.jumping_koopa[1] < self.SEQ_LENGTH - 2): # Frames 6-9
+                # Phase 2: jumping on koopa
+                self.jumping_koopa = (True, self.jumping_koopa[1]+1)
+                action = 5
+                return action
+            elif(self.jumping_koopa[1] < self.SEQ_LENGTH): # Frame 10
+                # Phase 3: shooting shell
+                self.jumping_koopa = (True, self.jumping_koopa[1]+1)
+                action = 6 # go left for a bit, to get behind shell
+                return action
+            else:
+                self.jumping_koopa = (False, 0)
+                return None
+        return None
+
     # Given enemy locations, marios location and marios displacement, calculate
     # whether the enemy is a risk to marios life, and if so return True
     def __check_enemies(self, enemy_locations, mario_locations, mario_disp):
@@ -80,12 +108,14 @@ class CVAgent:
                     if(prev_enemy[0][1] == enemy[0][1] and abs(enemy_disp[0]) <= x_range): # checks to see if previous enemy is the same as current
                         if(mario_disp[0] * enemy_disp[0] <= 0): # mario travelling towards enemy
                             if(enemy[2] == 'goomba'): jump_range = self.GOOMBA_RANGE # How close (in pixels) mario should get before jumping
-                            elif(enemy[2] == 'koopa'): jump_range = self.KOOPA_RANGE
-                            elif(enemy[2] == 'koopashell'): jump_range = self.SHELL_RANGE
+                            elif(enemy[2] == 'koopa'): jump_range = self.KOOPA_RANGE    
+                            elif(enemy[2] == 'koopashell'): 
+                                jump_range = self.SHELL_RANGE # if koopa shell is returning to hit mario
                             if(enemy[0][0] - (mario_locations[0][0][0] + mario_locations[0][1][0]) in range(jump_range)):
+                                if(enemy[2] == 'koopa'): self.jumping_koopa = (True, 0)
                                 return True
 
-    # Make action function adapted from Lauren Gee's work
+    # Action function adapted from Lauren Gee's work
     # In mario_locate_objects.py
     def __make_action(self, screen, info, step, prev_action):
         
@@ -110,7 +140,6 @@ class CVAgent:
             object_locations = mario_locate_objects.locate_objects(screen, self.last_state.mario_status)
             self.last_state.enemy_locations = object_locations["enemy"]
             self.last_state.block_locations = object_locations["block"]
-            self.last_state.item_locations  = object_locations["item"]
 
             # Grabbed the info to store for next action, now return prev_action
             return prev_action
@@ -122,31 +151,37 @@ class CVAgent:
             mario_locations = object_locations["mario"]
             enemy_locations = object_locations["enemy"]
             block_locations = object_locations["block"]
-            item_locations = object_locations["item"]
 
             if(len(mario_locations) != 1):
-                # Mario cannot be found, return action 1 for now
+                # Mario cannot be found, return action 1 to prevent errors
                 action = 1
                 return action
             
-            # state = self.__get_mario_state(mario_locations[0], screen)
-            # Secondary check for mario being on ground, as the sprites can be inconsistent
+
+            
+            # check for mario being on ground, as the sprites can be inconsistent
             block_under_mario = self.__block_under_mario(block_locations, mario_locations[0])
             if(block_under_mario != None): state = 'G'
             else: state = 'A'
 
+            action = self.__jump_koopa(state)
+            if(action != None): 
+                return action # continue special action sequence for a koopa
+
             if(prev_action in [2,5] and state == 'G'): return 1 # run right to allow jump again
 
+           
             # Mario displacement based on previous frames
             mario_disp = (info["x_pos"] - self.last_state.mario_world_coords[0], info["y_pos"] - self.last_state.mario_world_coords[1])
             # If mario on ground, follow decision tree
             if (state == 'G'):
-                if(self.jumping_hole): self.jumping_hole = False # no longer jumping if on ground again
-                if(self.jumping_enemy): self.jumping_enemy = False
+                self.jumping_hole = False # no longer jumping if on ground again
+                self.jumping_enemy = False
 
                 enemy_found = self.__check_enemies(enemy_locations, mario_locations, mario_disp)
                 if(enemy_found):
-                    action = 2
+                    action = self.__jump_koopa(state)
+                    if(action == None): action = 5
                     self.jumping_enemy = True
                     return action
 
@@ -229,7 +264,8 @@ class CVAgent:
         self.env.reset()
         step = 0
         run_score = 0
-        if(debug): print("Running in debug mode")
+        if(debug): 
+            print("Running in debug mode")
         while True:
             if obs is not None:
                 action = self.__make_action(obs, info, step, action)
