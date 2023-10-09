@@ -31,7 +31,7 @@ class CVAgent:
     jumping_enemy = False
 
     def __init__(self):
-        self.env = gym.make("SuperMarioBros-1-2-v0", apply_api_compatibility=True, render_mode="human")
+        self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True, render_mode="human")
         self.env = gym.wrappers.GrayScaleObservation(self.env)
         self.env = JoypadSpace(self.env, SIMPLE_MOVEMENT)
 
@@ -159,6 +159,12 @@ class CVAgent:
                             # note - by doing (block - mario) we eliminate pipes that are to the left of mario
                             action = 2
                             return action
+                    elif(enemy_locations == [] and block[2] == 'question_block'):
+                        question_range = (10, 15) # how close mario should be to question block in x
+                        mario_to_question = block[0][0] - mario_locations[0][0][0]
+                        if(mario_to_question in range(question_range[0], question_range[1])):
+                            if(mario_locations[0][0][1] - block[0][1] in range(10, 100)): # within y range
+                                return 2 # jump to hit question block
                     # Check if need to jump over a block
                     else:
                         block_range = (10, 30) # How close mario should get before jumping over block in path

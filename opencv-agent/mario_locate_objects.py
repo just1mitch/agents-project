@@ -55,11 +55,11 @@ image_files = {
         "goomba": ["goomba.png", "goomba2.png"],
         "koopa": ["koopaA.png", "koopaB.png"],
         "koopashell": ["shellAD.png"]
-        # , "shellBD.png", "shellAD.png"
+
     },
     "block": {
         "block": ["block1.png", "block2.png", "block3.png", "block4.png"],
-        "question_block": ["questionA.png", "questionB.png", "questionC.png"],
+        "question_block": ["questionA.png", "questionB.png", "questionC.png", "questionCB.png"],
         "pipe": ["pipe_upper_section.png", "pipe_lower_section.png"],
     },
     "item": {
@@ -243,7 +243,6 @@ def locate_objects(screen, mario_status):
             # pipe has special logic, so skip it for now
             if object_name == "pipe":
                 continue
-            
             # find locations of objects
             results = _locate_object(screen, category_templates[object_name], stop_early)
             for location, dimensions in results:
