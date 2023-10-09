@@ -26,11 +26,12 @@ class CVAgent:
     STEPS_PER_ACTION = 5
     GOOMBA_RANGE = 55
     KOOPA_RANGE = 40
+    SHELL_RANGE = 40
     jumping_hole = False # State of mario if he is jumping a hole
     jumping_enemy = False
 
     def __init__(self):
-        self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True, render_mode="human")
+        self.env = gym.make("SuperMarioBros-1-2-v0", apply_api_compatibility=True, render_mode="human")
         self.env = gym.wrappers.GrayScaleObservation(self.env)
         self.env = JoypadSpace(self.env, SIMPLE_MOVEMENT)
 
@@ -80,6 +81,7 @@ class CVAgent:
                         if(mario_disp[0] * enemy_disp[0] <= 0): # mario travelling towards enemy
                             if(enemy[2] == 'goomba'): jump_range = self.GOOMBA_RANGE # How close (in pixels) mario should get before jumping
                             elif(enemy[2] == 'koopa'): jump_range = self.KOOPA_RANGE
+                            elif(enemy[2] == 'koopashell'): jump_range = self.SHELL_RANGE
                             if(enemy[0][0] - (mario_locations[0][0][0] + mario_locations[0][1][0]) in range(jump_range)):
                                 return True
 

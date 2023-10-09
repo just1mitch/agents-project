@@ -26,7 +26,7 @@ PRINT_LOCATIONS = False
 # other constants (don't change these)
 SCREEN_HEIGHT   = 240
 SCREEN_WIDTH    = 256
-MATCH_THRESHOLD = 0.9
+MATCH_THRESHOLD = 0.85
 
 ################################################################################
 # TEMPLATES FOR LOCATING OBJECTS
@@ -54,6 +54,8 @@ image_files = {
     "enemy": {
         "goomba": ["goomba.png", "goomba2.png"],
         "koopa": ["koopaA.png", "koopaB.png"],
+        "koopashell": ["shellAD.png"]
+        # , "shellBD.png", "shellAD.png"
     },
     "block": {
         "block": ["block1.png", "block2.png", "block3.png", "block4.png"],
