@@ -8,6 +8,8 @@ import numpy as np
 
 
 # Main game playing agent
+# Detection code adapted from 
+# https://github.com/vmorarji/Object-Detection-in-Mario/blob/master/detect.py
 class CVAgent:
     # A class holding information of the last state of the game
     # Allows heuristics to have a limited understanding of
@@ -21,7 +23,10 @@ class CVAgent:
     
     last_state = LastState()
     env = None
-    DEBUG = False
+    ## If DEBUG == None - no debugging
+    ## If DEBUG == "console" - only console messages
+    ## If DEBUG == "detect" - show detection screen and console messages
+    DEBUG = None
     STEPS_PER_ACTION = 5
     GOOMBA_RANGE = 55
     KOOPA_RANGE = 70
@@ -35,9 +40,18 @@ class CVAgent:
     SEQ_LENGTH = 11
 
     
-    def __init__(self):
-        self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True, render_mode="human")
+    def __init__(self, debug=None):
+        if debug not in [None, 'console', 'detect']:
+            raise ValueError("""Invalid Debugging method, Please choose from:\n
+                             None: No debugging\n
+                             console: Console messages only\n
+                             detect: Show detection boxes (significantly slower)\n""")
+        self.DEBUG = debug
+        if(self.DEBUG is not None): print(f"Running in debug mode: {self.DEBUG}")
+        if(self.DEBUG in ['detect']): self.env = gym.make("SuperMarioBros-1-2-v0", apply_api_compatibility=True)
+        else: self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True, render_mode="human")
         self.env = gym.wrappers.GrayScaleObservation(self.env)
+        
         self.env = JoypadSpace(self.env, SIMPLE_MOVEMENT)
 
     # Gets the block under mario, if there is one
@@ -64,7 +78,7 @@ class CVAgent:
                     continue # found a block ahead
                 else:
                     # hole found
-                    if(self.DEBUG): print(f"Hole found in front of mario {mario_location[0]}: {block[0]}")
+                    if(self.DEBUG is not None): print(f"Hole found in front of mario {mario_location[0]}: {block[0]}")
                     return True
             # Found no holes, return empty list
             return False
@@ -114,12 +128,40 @@ class CVAgent:
                                 jump_range = self.SHELL_RANGE # if koopa shell is returning to hit mario
                             if(enemy[0][0] - (mario_locations[0][0][0] + mario_locations[0][1][0]) in range(jump_range)):
                                 if(enemy[2] == 'koopa'): self.jumping_koopa = (True, 0)
-                                if(self.DEBUG): print(f"Reacting to enemy {enemy[2]}: {enemy[0]}")
+                                if(self.DEBUG is not None): print(f"Reacting to enemy {enemy[2]}: {enemy[0]}")
                                 return True
 
     # Action function adapted from Lauren Gee's work
     # In mario_locate_objects.py
     def __make_action(self, screen, info, step, prev_action):
+
+        # Secondary debugging screen to show openCV detection rectangles
+        # Means that screen is scanned for opponents every frame
+        if(self.DEBUG in ['detect']):
+            mario_status = info["status"]
+            object_locations = mario_locate_objects.locate_objects(screen, mario_status)
+
+            mario_locations = object_locations["mario"]
+            enemy_locations = object_locations["enemy"]
+            block_locations = object_locations["block"]
+            frame = cv.cvtColor(screen, cv.COLOR_RGB2BGR)
+            if(enemy_locations):
+                for enemy in enemy_locations:
+                    pt1 = (enemy[0][0], enemy[0][1])
+                    pt2 = (pt1[0] + enemy[1][0], pt1[1] + enemy[1][1])
+                    cv.rectangle(frame, pt1, pt2, color=2)
+                    cv.putText(frame, f"{enemy[2]}", (pt2[0]+5, pt1[1]), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3, color=1)
+            if(block_locations):
+                for block in block_locations:
+                    if(block[2] != 'block'): # Exclude regular blocks, to speed up debugging
+                        pt1 = (block[0][0], block[0][1])
+                        pt2 = (pt1[0] + block[1][0], pt1[1] + block[1][1])
+                        cv.rectangle(frame, pt1, pt2, color=2)
+                        if(block[2] == 'question_block'): name = 'QB'
+                        else: name = block[2]
+                        cv.putText(frame, name, (pt2[0], pt1[1]), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3, color=1)
+            cv.imshow("DEBUG: Detections", frame)
+            if cv.waitKey(1)&0xFF == ord('q'): pass
         
         game_step = step % self.STEPS_PER_ACTION
         if game_step != 0 and game_step != self.STEPS_PER_ACTION - 3: 
@@ -130,7 +172,13 @@ class CVAgent:
         elif(game_step == self.STEPS_PER_ACTION - 3):
             self.last_state.last_action = prev_action
             self.last_state.mario_world_coords = (info["x_pos"], info["y_pos"])
-            self.last_state.mario_status = info["status"]
+
+            # If debugging, some data has already been grabbed
+            if self.DEBUG not in ['detect']:
+                mario_status = info["status"]
+                object_locations = mario_locate_objects.locate_objects(screen, self.last_state.mario_status)
+            
+            self.last_state.mario_status = mario_status
 
             # This is the format of the lists of locations:
             # ((x_coordinate, y_coordinate), (object_width, object_height), object_name)
@@ -139,20 +187,23 @@ class CVAgent:
             #
             # For example, the enemy_locations list might look like this:
             # [((161, 193), (16, 16), 'goomba'), ((175, 193), (16, 16), 'goomba')]
-            object_locations = mario_locate_objects.locate_objects(screen, self.last_state.mario_status)
             self.last_state.enemy_locations = object_locations["enemy"]
-            self.last_state.block_locations = object_locations["block"]
+            # self.last_state.block_locations = object_locations["block"]
 
             # Grabbed the info to store for next action, now return prev_action
             return prev_action
         
         elif(game_step == 0):
-            mario_status = info["status"]
-            object_locations = mario_locate_objects.locate_objects(screen, mario_status)
 
-            mario_locations = object_locations["mario"]
-            enemy_locations = object_locations["enemy"]
-            block_locations = object_locations["block"]
+            # already grabbed info if debugging
+            if self.DEBUG not in ['detect']:
+                mario_status = info["status"]
+                object_locations = mario_locate_objects.locate_objects(screen, mario_status)
+
+                mario_locations = object_locations["mario"]
+                enemy_locations = object_locations["enemy"]
+                block_locations = object_locations["block"]
+
 
             if(len(mario_locations) != 1):
                 # Mario cannot be found, return action 1 to prevent errors
@@ -194,7 +245,7 @@ class CVAgent:
                         mario_to_pipe = block[0][0] - mario_locations[0][0][0]
                         if(mario_to_pipe in range(pipe_range[0], pipe_range[1])):
                             # note - by doing (block - mario) we eliminate pipes that are to the left of mario
-                            if(self.DEBUG): print(f"Reacting to pipe: {block[0]}")
+                            if(self.DEBUG is not None): print(f"Reacting to pipe: {block[0]}")
                             action = 2
                             return action
                     elif(enemy_locations == [] and block[2] == 'question_block'):
@@ -202,7 +253,7 @@ class CVAgent:
                         mario_to_question = block[0][0] - mario_locations[0][0][0]
                         if(mario_to_question in range(question_range[0], question_range[1])):
                             if(mario_locations[0][0][1] - block[0][1] in range(10, 100)): # within y range
-                                if(self.DEBUG): print(f"Reacting to question block: {block[0]}")
+                                if(self.DEBUG is not None): print(f"Reacting to question block: {block[0]}")
                                 return 2 # jump to hit question block
                     # Check if need to jump over a block
                     else:
@@ -210,7 +261,7 @@ class CVAgent:
                         if(block[0][0] - mario_locations[0][0][0] in range(block_range[0], block_range[1])):
                             # if halfway through mario cuts through block
                             if(mario_locations[0][0][1] + (mario_locations[0][1][1] / 2) in range(block[0][1], block[0][1] + block[1][1])):
-                                if(self.DEBUG): print(f"Reacting to block in front of mario: {block[0]}")
+                                if(self.DEBUG is not None): print(f"Reacting to block in front of mario: {block[0]}")
                                 action = 2
                                 return action
                         
@@ -263,15 +314,13 @@ class CVAgent:
             return action
 
 
-    def play(self, debug=False):
+    def play(self):
         obs = None
         done = True
         self.env.reset()
         step = 0
         run_score = 0
-        if(debug): 
-            print("Running in debug mode")
-            self.DEBUG = True
+        
         while True:
             if obs is not None:
                 action = self.__make_action(obs, info, step, action)
@@ -281,7 +330,7 @@ class CVAgent:
             run_score += reward
             done = terminated or truncated
             if done:
-                if(self.DEBUG): print(f"Reward for run: {run_score}")
+                if(self.DEBUG is not None): print(f"Reward for run: {run_score}")
                 step = 0
                 run_score = 0
                 self.env.reset()
@@ -289,7 +338,6 @@ class CVAgent:
         self.env.close()
 
 
-agent = CVAgent()
-
 if(__name__ == "__main__"):
-    agent.play(debug=True)
+    agent = CVAgent(debug='detect')
+    agent.play()
