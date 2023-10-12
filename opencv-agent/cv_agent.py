@@ -48,7 +48,7 @@ class CVAgent:
                              detect: Show detection boxes (significantly slower)\n""")
         self.DEBUG = debug
         if(self.DEBUG is not None): print(f"Running in debug mode: {self.DEBUG}")
-        if(self.DEBUG in ['detect']): self.env = gym.make("SuperMarioBros-1-2-v0", apply_api_compatibility=True)
+        if(self.DEBUG in ['detect']): self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True)
         else: self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True, render_mode="human")
         self.env = gym.wrappers.GrayScaleObservation(self.env)
         
@@ -153,12 +153,13 @@ class CVAgent:
                     cv.putText(frame, f"{enemy[2]}", (pt2[0]+5, pt1[1]), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3, color=1)
             if(block_locations):
                 for block in block_locations:
-                    if(block[2] != 'block'): # Exclude regular blocks, to speed up debugging
-                        pt1 = (block[0][0], block[0][1])
-                        pt2 = (pt1[0] + block[1][0], pt1[1] + block[1][1])
-                        cv.rectangle(frame, pt1, pt2, color=2)
-                        if(block[2] == 'question_block'): name = 'QB'
-                        else: name = block[2]
+                    pt1 = (block[0][0], block[0][1])
+                    pt2 = (pt1[0] + block[1][0], pt1[1] + block[1][1])
+                    cv.rectangle(frame, pt1, pt2, color=2)
+                    if(block[2] == 'question_block'): name = 'QB'
+                    else: name = block[2]
+                    # if block is not under mario, apply text
+                    if(block[0][1] - mario_locations[0][0][1] < 0):
                         cv.putText(frame, name, (pt2[0], pt1[1]), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3, color=1)
             cv.imshow("DEBUG: Detections", frame)
             if cv.waitKey(1)&0xFF == ord('q'): pass
