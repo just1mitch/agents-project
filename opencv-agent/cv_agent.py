@@ -4,8 +4,7 @@ from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 import gym
 import cv2 as cv
 import numpy as np
-
-
+import time
 
 # Main game playing agent
 # Detection code adapted from 
@@ -27,6 +26,8 @@ class CVAgent:
     ## If DEBUG == "console" - only console messages
     ## If DEBUG == "detect" - show detection screen and console messages
     DEBUG = None
+    # 6, 80, 80 is interesting
+    # 7, 30, 65
     STEPS_PER_ACTION = 5
     GOOMBA_RANGE = 55
     KOOPA_RANGE = 70
@@ -48,8 +49,10 @@ class CVAgent:
                              detect: Show detection boxes (significantly slower)\n""")
         self.DEBUG = debug
         if(self.DEBUG is not None): print(f"Running in debug mode: {self.DEBUG}")
-        if(self.DEBUG in ['detect']): self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True)
-        else: self.env = gym.make("SuperMarioBros-1-1-v0", apply_api_compatibility=True, render_mode="human")
+
+        level = "SuperMarioBros-1-1-v0"
+        if(self.DEBUG in ['detect']): self.env = gym.make(level, apply_api_compatibility=True)
+        else: self.env = gym.make(level, apply_api_compatibility=True, render_mode="human")
         self.env = gym.wrappers.GrayScaleObservation(self.env)
         
         self.env = JoypadSpace(self.env, SIMPLE_MOVEMENT)
@@ -165,12 +168,12 @@ class CVAgent:
             if cv.waitKey(1)&0xFF == ord('q'): pass
         
         game_step = step % self.STEPS_PER_ACTION
-        if game_step != 0 and game_step != self.STEPS_PER_ACTION - 3: 
+        if game_step != 0 and game_step != self.STEPS_PER_ACTION // 2: 
             return prev_action
-        # 2 steps before an action is chosen, a snapshot of the game
+        # before next action is chosen, a snapshot of the game
         # is saved in a LastState object to be referenced when making
         # a choice on the next move
-        elif(game_step == self.STEPS_PER_ACTION - 3):
+        elif(game_step == self.STEPS_PER_ACTION // 2):
             self.last_state.last_action = prev_action
             self.last_state.mario_world_coords = (info["x_pos"], info["y_pos"])
 
@@ -314,15 +317,24 @@ class CVAgent:
             action = 1
             return action
 
+    # returning param defines what data about a run to return to caller
+    # A 'run' ends when mario has completed a level, or ran out of lives
+    # False = don't return anything
+    # True = return metrics for run, including:
+    #   - time taken to complete run (seconds)
+    #   - reward score for run
+    #   - number of steps in the run
+    def play(self, metrics=False):
 
-    def play(self):
         obs = None
         done = True
         self.env.reset()
         step = 0
         run_score = 0
-        
-        while True:
+        if(metrics): start = time.time_ns()
+
+        # limited to 5001 steps
+        while step < 5001:
             if obs is not None:
                 action = self.__make_action(obs, info, step, action)
             else:
@@ -331,12 +343,20 @@ class CVAgent:
             run_score += reward
             done = terminated or truncated
             if done:
+                if(metrics): runtime = (time.time_ns() - start) / 1000000000
                 if(self.DEBUG is not None): print(f"Reward for run: {run_score}")
-                step = 0
-                run_score = 0
-                self.env.reset()
+                break
             step += 1
-        self.env.close()
+        
+        # self.env.close()
+        if(metrics and done):
+            data = {
+                'run-score': run_score,
+                'run-time': runtime,
+                'steps': step
+            }
+            return data
+        else: return
 
 
 if(__name__ == "__main__"):
