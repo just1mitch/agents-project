@@ -27,9 +27,9 @@ class CVAgent:
     ## If DEBUG == "detect" - show detection screen and console messages
     DEBUG = None
 
-    STEPS_PER_ACTION = 7
-    GOOMBA_RANGE = 30
-    KOOPA_RANGE = 65
+    STEPS_PER_ACTION = 4
+    GOOMBA_RANGE = 45
+    KOOPA_RANGE = 75
     SHELL_RANGE = 40
     
     jumping_hole = False # State of mario if he is jumping a hole
@@ -161,7 +161,8 @@ class CVAgent:
                     if(block[2] == 'question_block'): name = 'QB'
                     else: name = block[2]
                     # if block is not under mario, apply text
-                    if(block[0][1] - mario_locations[0][0][1] < 0):
+
+                    if(mario_locations and block[0][1] - mario_locations[0][0][1] < 0):
                         cv.putText(frame, name, (pt2[0], pt1[1]), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3, color=1)
             cv.imshow("DEBUG: Detections", frame)
             if cv.waitKey(1)&0xFF == ord('q'): pass
@@ -359,5 +360,5 @@ class CVAgent:
 
 
 if(__name__ == "__main__"):
-    agent = CVAgent(debug=None)
+    agent = CVAgent(debug='detect')
     agent.play()
