@@ -26,8 +26,7 @@ class CVAgent:
     ## If DEBUG == "console" - only console messages
     ## If DEBUG == "detect" - show detection screen and console messages
     DEBUG = None
-    # 6, 80, 80 is interesting
-    # 7, 30, 65
+
     STEPS_PER_ACTION = 7
     GOOMBA_RANGE = 30
     KOOPA_RANGE = 65
