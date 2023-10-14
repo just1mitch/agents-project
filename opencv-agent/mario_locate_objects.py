@@ -78,7 +78,7 @@ image_files = {
 
 
 def _get_template(filename):
-    imagepath = str(Path("images") / filename)
+    imagepath = str(Path("opencv-agent/images") / filename)
     image = cv.imread(imagepath)
     assert image is not None, f"File {imagepath} does not exist."
     template = cv.cvtColor(image, cv.COLOR_BGR2GRAY)

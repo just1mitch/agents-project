@@ -3,10 +3,15 @@ from matplotlib import pyplot as plt
 import numpy as np
 from pathlib import PurePath
 
-datafile = PurePath("./experiment-data/experiment_dump_all.tsv")
-averages = PurePath("./exeriment-data/averages_dump_all.tsv")
+datafile = PurePath("opencv-agent/experiment-data/experiment_dump.tsv")
 
-if(__name__ == "__main__"):
+# Get all runs from the list of iterations where reward
+# score is over 3000 (associated with a level completion)
+def get_successful_runs(datalist):
+    return datalist[np.where(datalist[:,3] > 3000.0)]
+
+# Parse a tab separated file for the data
+def get_datalist(file):
     with open(datafile, 'r') as file:
         data = reader(file, delimiter="\t", )
         datalist = []
@@ -18,9 +23,14 @@ if(__name__ == "__main__"):
         
         datalist = sorted(datalist, key=lambda x:x[4])
         datalist = np.array(datalist)
+    return datalist
+
+if(__name__ == "__main__"):
+    
+    datalist = get_datalist(datafile)
 
     # Data analysis on winning runs (where reward is greater than 3000)
-    successful_runs = datalist[np.where(datalist[:,3] > 3000.0)]
+    successful_runs = get_successful_runs(datalist)
 
     print(f"Number of successful runs: {len(successful_runs)}/{len(datalist)} ({round(len(successful_runs)/len(datalist), 2)}%)")
     spa_sorted = sorted(successful_runs, key=lambda x:x[0])
@@ -42,17 +52,31 @@ if(__name__ == "__main__"):
     highest_score = successful_runs[highest_score_ind]
     print(f"Highest score parameters:\nReward score: {highest_score[3]}\nSTEPS_PER_ACTION: {highest_score[0]}\nGOOMBA_RANGE: {highest_score[1]}\nKOOPA_RANGE: {highest_score[2]}\n")
 
-    # Show scatter plot of successful runs
+    # Scatter plot of all data
+    time = [tup[4] for tup in datalist]
+    reward = [tup[3] for tup in datalist]
+    plt.figure(figsize=(10,8))
+    plt.scatter(time, reward, marker='.')
+    plt.xlabel("Time (s)")
+    plt.ylabel("Reward")
+    plt.figtext(0.5, 0.01, "Tests ran on Lenovo Legion 5i, Intel(R) Core(TM) i5-10300H CPU, NVIDIA GeForce GTX 1650Ti\nSee README for testing details", wrap=True, horizontalalignment='center')
+    plt.title("Performance of OpenCV Agent in all Super Mario Bros Iterations", loc='center', pad=1.5)
+    figpath = PurePath("opencv-agent/experiment-data/all-runs.png")
+    plt.savefig(figpath)
+
+    # Scatter plot of successful runs
     time = [tup[4] for tup in successful_runs]
     reward = [tup[3] for tup in successful_runs]
     colours = ['red' if i in [fastest_run_ind, highest_score_ind] else 'blue' for i in range(len(successful_runs))]
+    plt.figure(figsize=(10, 8))
     plt.scatter(time, reward, marker='.', c=colours)
     offset = ((plt.xlim()[1] - plt.xlim()[0])/50, (plt.ylim()[1] - plt.ylim()[0])/75)
     plt.annotate(f"{fastest_run[:3]}", (time[fastest_run_ind], reward[fastest_run_ind]), xytext=(time[fastest_run_ind]+offset[0], reward[fastest_run_ind]+offset[1]), fontsize = 6)
     plt.annotate(f"{highest_score[:3]}", (time[highest_score_ind], reward[highest_score_ind]), xytext=((time[highest_score_ind]+offset[0]), reward[highest_score_ind]+offset[1]), fontsize = 6)
     plt.xlabel("Time (s)")
     plt.ylabel("Reward")
-    plt.title("Time vs Reward Graph for Successful Super Mario Bros Iterations", loc='center', pad=1.5)
-    figpath = PurePath("./experiment-data/successful-runs.png")
+    plt.title("Performance of OpenCV Agent in Successful Super Mario Bros Iterations", loc='center', pad=1.5)
+    plt.figtext(0.5, 0.01, "Tests ran on Lenovo Legion 5i, Intel(R) Core(TM) i5-10300H CPU, NVIDIA GeForce GTX 1650Ti\nSee README for testing details", wrap=True, horizontalalignment='center')
+    figpath = PurePath("opencv-agent/experiment-data/successful-runs.png")
     plt.savefig(figpath)
     print(f"Analysis Complete, plot saved to {figpath}")

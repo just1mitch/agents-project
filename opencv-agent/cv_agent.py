@@ -21,6 +21,7 @@ class CVAgent:
     
     last_state = LastState()
     env = None
+
     ## If DEBUG == None - no debugging
     ## If DEBUG == "console" - only console messages
     ## If DEBUG == "detect" - show detection screen and console messages
@@ -345,6 +346,8 @@ class CVAgent:
             obs, reward, terminated, truncated, info = self.env.step(action)
             run_score += reward
             done = terminated or truncated
+            if(info['x_pos'] >= 1200):
+                print(f"Reached x_pos of 1200 after {step} steps")
             if done:
                 if(metrics): runtime = (time.time_ns() - start) / 1000000000
                 if(self.DEBUG is not None): print(f"Reward for run: {run_score}")
@@ -356,7 +359,7 @@ class CVAgent:
             data = {
                 'run-score': run_score,
                 'run-time': runtime,
-                'steps': step
+                'steps': step,
             }
             return data
         else: return

@@ -59,6 +59,12 @@ ___
 
 To see an analysis of the experiment data, run `python analysis.py`
 
+The experiment run (by the program `run_experiments.py`) tested 847 different simulations of the openCV agent, with every combination of the following:  
+- `agent.STEPS_PER_ACTION` in the range (4, 5, 6, 7, 8, 9, 10)
+- `agent.GOOMBA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
+- `agent.KOOPA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
+
+Each combination need only be tested once, as the openCV agent will play the exact same way each time a certain combination is provided.
 
 ## **DDQN Agent**
   <div class="column">

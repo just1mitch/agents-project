@@ -5,7 +5,10 @@ from time import time
 
 # ranges to test for each parameter
 # start (inc), stop (exc), steps
-SPA_test_range = (4, 11, 1) # start at 4 otherwise mario never gets over pipes
+# SPA_test_range = (4, 9, 1) # start at 4 otherwise mario never gets over pipes
+# GOOMBA_test_range = (30,81,5)
+# KOOPA_test_range = (30,81,5)
+SPA_test_range = (7, 9, 1) # start at 4 otherwise mario never gets over pipes
 GOOMBA_test_range = (30,81,5)
 KOOPA_test_range = (30,81,5)
 
