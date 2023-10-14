@@ -91,7 +91,7 @@ for e in range(episodes):
     cv2.destroyAllWindows()
     logger.log_episode()
 
-    if e % 20 == 0:
+    if e % 1 == 0:
         logger.record(
             episode=e,
             epsilon=mario.exploration_rate,
