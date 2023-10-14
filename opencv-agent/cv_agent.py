@@ -3,7 +3,6 @@ from nes_py.wrappers import JoypadSpace
 from gym_super_mario_bros.actions import SIMPLE_MOVEMENT
 import gym
 import cv2 as cv
-import numpy as np
 import time
 
 # Main game playing agent
@@ -11,7 +10,7 @@ import time
 # https://github.com/vmorarji/Object-Detection-in-Mario/blob/master/detect.py
 class CVAgent:
     # A class holding information of the last state of the game
-    # Allows heuristics to have a limited understanding of
+    # Allows heuristics to have a limited understanding 2of
     # the current occurrences of the game
     class LastState:
         last_action = None
@@ -27,9 +26,13 @@ class CVAgent:
     ## If DEBUG == "detect" - show detection screen and console messages
     DEBUG = None
 
-    STEPS_PER_ACTION = 4
+    # Number of steps taken before another action is chosen
+    STEPS_PER_ACTION = 8
+    # Range (in pixels) between Mario and a Goomba before Mario will jump
     GOOMBA_RANGE = 45
+    # Range (in pixels) between Mario and a Koopa before Mario will jump
     KOOPA_RANGE = 75
+    # Range (in pixels) between Mario and a Koopa shell before Mario will jump
     SHELL_RANGE = 40
     
     jumping_hole = False # State of mario if he is jumping a hole
@@ -317,8 +320,8 @@ class CVAgent:
             action = 1
             return action
 
-    # returning param defines what data about a run to return to caller
-    # A 'run' ends when mario has completed a level, or ran out of lives
+    # metrics param defines what data about a run to return to caller
+    # A 'run' ends when mario has completed a level, or died
     # False = don't return anything
     # True = return metrics for run, including:
     #   - time taken to complete run (seconds)
@@ -333,7 +336,7 @@ class CVAgent:
         run_score = 0
         if(metrics): start = time.time_ns()
 
-        # limited to 5001 steps
+        # limited to 5000 steps
         while step < 5001:
             if obs is not None:
                 action = self.__make_action(obs, info, step, action)
@@ -348,7 +351,7 @@ class CVAgent:
                 break
             step += 1
         
-        # self.env.close()
+        # self.env.close() # Uncomment to end run after death
         if(metrics and done):
             data = {
                 'run-score': run_score,
@@ -360,5 +363,4 @@ class CVAgent:
 
 
 if(__name__ == "__main__"):
-    agent = CVAgent(debug='detect')
-    agent.play()
+    print("Please use run_agent.py to run the agent")

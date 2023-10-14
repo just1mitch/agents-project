@@ -4,7 +4,7 @@ import gym
 import cv2 as cv
 import numpy as np
 import string
-import os
+from pathlib import Path
 
 # code for locating objects on the screen in super mario bros
 # by Lauren Gee
@@ -78,9 +78,9 @@ image_files = {
 
 
 def _get_template(filename):
-    IMAGEDIRECTORY = ".\\opencv-agent\\images\\"
-    image = cv.imread(f"{IMAGEDIRECTORY}{filename}")
-    assert image is not None, f"File {filename} does not exist."
+    imagepath = str(Path("images") / filename)
+    image = cv.imread(imagepath)
+    assert image is not None, f"File {imagepath} does not exist."
     template = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     mask = np.uint8(np.where(np.all(image == MASK_COLOUR, axis=2), 0, 1))
     num_pixels = image.shape[0]*image.shape[1]
@@ -343,34 +343,11 @@ def make_action(screen, info, step, env, prev_action):
         print("Mario's location in world:",
               mario_world_x, mario_world_y, f"({mario_status} mario)")
 
-    # TODO: Write code for a strategy, such as a rule based agent.
-
-    # Choose an action from the list of available actions.
-    # For example, action = 0 means do nothing
-    #              action = 1 means press 'right' button
-    #              action = 2 means press 'right' and 'A' buttons at the same time
-
     # I have no strategy at the moment, so I'll choose a random action.
     action = env.action_space.sample()
     return action
 
 ################################################################################
 
-
 if(__name__ == "__main__"):
-    env = gym.make("SuperMarioBros-v0", apply_api_compatibility=True, render_mode="human")
-    env = JoypadSpace(env, SIMPLE_MOVEMENT)
-
-    obs = None
-    done = True
-    env.reset()
-    for step in range(100000):
-        if obs is not None:
-            action = make_action(obs, info, step, env, action)
-        else:
-            action = env.action_space.sample()
-        obs, reward, terminated, truncated, info = env.step(action)
-        done = terminated or truncated
-        if done:
-            env.reset()
-    env.close()
+    print("Please use run_agent.py to run the agent")
