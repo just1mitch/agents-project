@@ -140,6 +140,9 @@ class Mario:
             self.save(episode=self.current_episode)
         if self.curr_step < self.burnin or self.curr_step % self.learn_every != 0:
             return None, None
+        short_burnin = 5000
+        if len(self.memory) < short_burnin:
+            return None, None
         # Sample from memory
         state, next_state, action, reward, done = self.recall()
         td_est = self.td_estimate(state, action)
@@ -157,6 +160,7 @@ class Mario:
             'exploration_rate': self.exploration_rate, # Save the exploration rate
             'episode': episode,  # Save the episode number so we can re-train
             'curr_step': self.curr_step # Save the current step
+         #   'memory': list(self.memory)[-10000:]
         }, save_path)
         print(f"MarioNet saved to {save_path} at step {self.curr_step}")
 
@@ -165,6 +169,8 @@ class Mario:
         if not load_path.exists():
             raise ValueError(f"{load_path} does not exist")
         ckp = torch.load(load_path, map_location=('cuda'))
+        #loaded_memory = ckp.get('memory', [])
+        #self.memory.extend(loaded_memory)
         self.net.load_state_dict(ckp.get('model'))
         self.exploration_rate = ckp.get('exploration_rate')
         self.curr_step = ckp.get('curr_step', 0)

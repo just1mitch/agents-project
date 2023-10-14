@@ -25,7 +25,7 @@ class MetricLogger():
         self.ep_avg_losses_plot = save_dir / "loss_plot.jpg"
         self.ep_avg_qs_plot = save_dir / "q_plot.jpg"
         self.ep_max_xs_plot = save_dir / "max_x_plot.jpg"
-
+        self.computer_specs = "AMD Ryzen 7800X3D CPU, NVIDIA RTX 4070Ti GPU"
         # History metrics
         self.init_data()
 
@@ -111,15 +111,14 @@ class MetricLogger():
         }
 
         # Write to file less frequently this can be different than the e % call in main.py
-        if episode % 50 == 0:
-            with open(self.save_log, "a") as f:
-                f.write(
-                    f"{episode:8d}{step:8d}{epsilon:10.3f}"
-                    f"{self.ep_rewards[-1]:10.3f}{self.ep_lengths[-1]:10d}{self.ep_avg_losses[-1]:10.3f}{self.ep_avg_qs[-1]:10.3f}"
-                    f"{mean_values['ep_rewards']:15.3f}{mean_values['ep_lengths']:15.3f}{mean_values['ep_avg_losses']:15.3f}{mean_values['ep_avg_qs']:15.3f}"
-                    f"{self.ep_max_xs[-1]:10d}"  # Log max x for the last episode
-                    f"{time_since_last_record:15.3f}"
-                    f"{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'):>20}\n"
+        with open(self.save_log, "a") as f:
+            f.write(
+                f"{episode:8d}{step:8d}{epsilon:10.3f}"
+                f"{self.ep_rewards[-1]:10.3f}{self.ep_lengths[-1]:10d}{self.ep_avg_losses[-1]:10.3f}{self.ep_avg_qs[-1]:10.3f}"
+                f"{mean_values['ep_rewards']:15.3f}{mean_values['ep_lengths']:15.3f}{mean_values['ep_avg_losses']:15.3f}{mean_values['ep_avg_qs']:15.3f}"
+                f"{self.ep_max_xs[-1]:10d}"  # Log max x for the last episode
+                f"{time_since_last_record:15.3f}"
+                f"{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'):>20}\n"
                 )
 
             # Plot metrics less frequently e.g., every 100 episodes
@@ -138,6 +137,7 @@ class MetricLogger():
             plt.grid(True)
             plt.ylabel(title)
             plt.xlabel("Episode")
+            plt.annotate(self.computer_specs, (0.05, 0.05), xycoords='axes fraction', fontsize=10, verticalalignment='bottom')
             plt.savefig(getattr(self, f"{metric}_plot"))
             plt.close()
     def load_previous_metrics(self):
