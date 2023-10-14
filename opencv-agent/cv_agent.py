@@ -28,9 +28,9 @@ class CVAgent:
     DEBUG = None
     # 6, 80, 80 is interesting
     # 7, 30, 65
-    STEPS_PER_ACTION = 5
-    GOOMBA_RANGE = 55
-    KOOPA_RANGE = 70
+    STEPS_PER_ACTION = 7
+    GOOMBA_RANGE = 30
+    KOOPA_RANGE = 65
     SHELL_RANGE = 40
     
     jumping_hole = False # State of mario if he is jumping a hole
@@ -311,7 +311,7 @@ class CVAgent:
                             if(block[0][0] - mario_locations[0][0][0] in range(block_range[0], block_range[1])):
                                 # if halfway through mario cuts through block
                                 if(mario_locations[0][0][1] + (mario_locations[0][1][1] / 2) in range(block[0][1], block[0][1] + block[1][1])):
-                                    action = 5
+                                    action = 2
                                     return action
   
             action = 1
@@ -360,5 +360,5 @@ class CVAgent:
 
 
 if(__name__ == "__main__"):
-    agent = CVAgent(debug='detect')
+    agent = CVAgent(debug=None)
     agent.play()
