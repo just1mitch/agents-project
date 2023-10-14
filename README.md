@@ -73,7 +73,7 @@ A Model Checkpoint will be saved every `50,000` steps.
 
 <div class="row">
   <div class="column">
-    <img src="manual_agent/pictures/gameplay.gif" alt="Mario Gif" width="256" height="390">
+    <img src="manual_ddqn_agent/pictures/gameplay.gif" alt="Mario Gif" width="256" height="390">
   </div>
     
 **Evaluating a Model:**
