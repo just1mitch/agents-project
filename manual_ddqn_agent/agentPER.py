@@ -4,7 +4,12 @@ import numpy as np
 from pathlib import Path
 from collections import deque
 from neural import MarioNet
+
+# This version of agent.py is an experiment to see if we can get the agent to learn faster and more efficiently by using a prioritized experience replay buffer
+# Not included in the original project report as it relied more on assisted tools such as GPT to assist in designing and implementing the advanced buffer structure
+
 # Using a PER buffer instead of a Uniform one
+# A full comparison between the two buffers is not possible due to the time constraints of the project.
 class PrioritizedReplayBuffer:
     def __init__(self, capacity, prob_alpha=0.6):
         self.prob_alpha = prob_alpha
@@ -48,7 +53,6 @@ class PrioritizedReplayBuffer:
 # Replace the old replay buffer in Mario with the new one
 
 
-# In the original code, the agent is trained for 80000 episodes, but we will only train for 10000 episodes
 #https://github.com/yfeng997/MadMario/blob/master/agent.py
 class Mario:
     def __init__(self, state_dim, action_dim, save_dir, checkpoint=None):

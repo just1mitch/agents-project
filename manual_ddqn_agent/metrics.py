@@ -4,6 +4,11 @@ import matplotlib.pyplot as plt
 from collections import deque
 from pathlib import Path
 
+# Heavily modified from:
+# https://pytorch.org/tutorials/intermediate/mario_rl_tutorial.html
+
+# Noticed a bottleneck in the plotting function, so has been modified it to plot less frequently, but maintain the same data
+# Means are calculated using the last 100 episodes, so the plots should be the same
 class MetricLogger():
     def __init__(self, save_dir, resume=False):
         self.save_log = save_dir / "log"
@@ -37,30 +42,38 @@ class MetricLogger():
             self.load_previous_metrics()
 
     def init_data(self):
-        self.ep_rewards = []
-        self.ep_lengths = []
-        self.ep_avg_losses = []
-        self.ep_avg_qs = []
+        """
+        Initialise data fields
+        """
+        self.ep_rewards = [] # Field for episode rewards
+        self.ep_lengths = [] # Field for episode lengths
+        self.ep_avg_losses = [] #avg loss
+        self.ep_avg_qs = []  # New field for average Q values
         self.ep_max_xs = []  # New field for maximum x reached
         self.init_episode()
 
     def init_episode(self):
-        self.curr_ep_reward = 0.0
-        self.curr_ep_length = 0
-        self.curr_ep_loss = 0.0
-        self.curr_ep_q = 0.0
-        self.curr_ep_loss_length = 0
+        """
+         Initialise data fields for a new episode so it can be logged
+        """
+        self.curr_ep_reward = 0.0 #Episode Rewards
+        self.curr_ep_length = 0 #Episode Lengths
+        self.curr_ep_loss = 0.0 # Episode Loss of current episode
+        self.curr_ep_q = 0.0 # Episode Q values
+        self.curr_ep_loss_length = 0 # Episode loss length
         self.curr_ep_max_x = 0  # New field for maximum x reached in the current episode
 
-    def log_step(self, reward, loss, q, max_x):  # Added max_x parameter
+    def log_step(self, reward, loss, q, max_x):
+        """
+         Logg the Process at the current step
+        """
         self.curr_ep_reward += reward
         self.curr_ep_length += 1
         if loss:
             self.curr_ep_loss += loss
             self.curr_ep_q += q
             self.curr_ep_loss_length += 1
-        self.curr_ep_max_x = max(self.curr_ep_max_x, max_x)  # Update max x reached
-
+        self.curr_ep_max_x = max(self.curr_ep_max_x, max_x)
     def log_episode(self):
         if self.curr_ep_loss_length == 0:
             ep_avg_loss = 0
@@ -84,11 +97,12 @@ class MetricLogger():
         self.init_episode()
 
     def record(self, episode, epsilon, step):
+        """Record metrics and save to log file"""
         last_record_time = self.record_time
         self.record_time = time.time()
         time_since_last_record = np.round(self.record_time - last_record_time, 3)
 
-        # Efficient mean calculations
+        # Use the last 100 to calculate mean
         mean_values = {
             "ep_rewards": np.mean(self.last_100_rewards),
             "ep_lengths": np.mean(self.last_100_lengths),
@@ -96,7 +110,7 @@ class MetricLogger():
             "ep_avg_qs": np.mean(self.last_100_qs)
         }
 
-        # Write to file less frequently e.g.
+        # Write to file less frequently this can be different than the e % call in main.py
         if episode % 50 == 0:
             with open(self.save_log, "a") as f:
                 f.write(
@@ -111,6 +125,8 @@ class MetricLogger():
             # Plot metrics less frequently e.g., every 100 episodes
             self.plot_metrics()
 
+
+# Matplotlib code to plot metrics
     def plot_metrics(self):
         metrics = ["ep_rewards", "ep_lengths", "ep_avg_losses", "ep_avg_qs", "ep_max_xs"]  # Added ep_max_xs
         titles = ["Episode Rewards", "Episode Lengths", "Episode Avg Losses", "Episode Avg Qs", "Episode Max X Reached"]

@@ -1,7 +1,7 @@
 #CNN Policy Network Structure for an (1, 4, 84, 84) obs Mario
 
-# Used from https://github.com/yfeng997/MadMario/blob/master/neural.py
-
+# Implemented from https://github.com/yfeng997/MadMario/blob/master/neural.py
+# No modifications made to the structure of the Neural Network
 
 from torch import nn
 import copy

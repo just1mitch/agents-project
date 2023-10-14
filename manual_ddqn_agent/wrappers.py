@@ -64,84 +64,86 @@ class RemoveSeedWrapper(gym.Wrapper):
         return super().reset(**kwargs)
     
 # Experimental reward shaper - not used in final agent
-class RewardShaper:
-    def __init__(self):
-        self.prev_x_pos = 0
-        self.stuck_counter = 0
-        self.prev_enemy_kills = 0
+# # This would shape the reward outside of the environment, but it is better to do it inside the environment
+# class RewardShaper:
+#     def __init__(self):
+#         self.prev_x_pos = 0
+#         self.stuck_counter = 0
+#         self.prev_enemy_kills = 0
 
-    def get_reward(self, reward, info, done):
-        # Check if Mario's x-position increased
-        if info['x_pos'] > self.prev_x_pos:
-            self.prev_x_pos = info['x_pos']
-            self.stuck_counter = 0  # Reset stuck counter
-        else:
-            self.stuck_counter += 1
+#     def get_reward(self, reward, info, done):
+#         # Check if Mario's x-position increased
+#         if info['x_pos'] > self.prev_x_pos:
+#             self.prev_x_pos = info['x_pos']
+#             self.stuck_counter = 0  # Reset stuck counter
+#         else:
+#             self.stuck_counter += 1
 
-        # Check if Mario killed any enemies
-        if info['score'] > self.prev_enemy_kills:
-            reward += 2.0  # Bonus for killing an enemy
-            self.prev_enemy_kills = info['score']
+#         # Check if Mario killed any enemies
+#         if info['score'] > self.prev_enemy_kills:
+#             reward += 2.0  # Bonus for killing an enemy
+#             self.prev_enemy_kills = info['score']
 
-        # Penalty if Mario is stuck
-        if self.stuck_counter > 80:  # Assume stuck if no progress for 80 steps
-            reward -= 1.0
-            self.stuck_counter = 0  # Reset stuck counter
+#         # Penalty if Mario is stuck
+#         if self.stuck_counter > 80:  # Assume stuck if no progress for 80 steps
+#             reward -= 1.0
+#             self.stuck_counter = 0  # Reset stuck counter
 
-        # Large penalty for death
-        if done and not info['flag_get']:
-            reward -= 5
+#         # Large penalty for death
+#         if done and not info['flag_get']:
+#             reward -= 5
 
-        # Bonus for level completion
-        if info['flag_get']:
-            reward += 10
+#         # Bonus for level completion
+#         if info['flag_get']:
+#             reward += 10
 
-        return reward
+#         return reward
 
 # Experimental reward shaper - not used in final agent
-class EnhancedRewardWrapper(gym.Wrapper):
-    def __init__(self, env, new_max_x_bonus=5, stuck_penalty=-3, stuck_threshold=100):
-        super(EnhancedRewardWrapper, self).__init__(env)
-        self.max_x_pos = float('-inf')  # Keep track of the maximum x position reached
-        self.last_x_pos = None  # Keep track of the last x position
-        self.stuck_counter = 0  # Counter to check if Mario is stuck
-        # Bonus for reaching a new maximum x position
-        self.new_max_x_bonus = new_max_x_bonus
-        # Penalty for staying in the same x position for too long
-        self.stuck_penalty = stuck_penalty
-        # Number of frames to consider Mario as stuck
-        self.stuck_threshold = stuck_threshold
+# class EnhancedRewardWrapper(gym.Wrapper):
+#     def __init__(self, env, new_max_x_bonus=5, stuck_penalty=-3, stuck_threshold=100):
+#         super(EnhancedRewardWrapper, self).__init__(env)
+#         self.max_x_pos = float('-inf')  # Keep track of the maximum x position reached
+#         self.last_x_pos = None  # Keep track of the last x position
+#         self.stuck_counter = 0  # Counter to check if Mario is stuck
+#         # Bonus for reaching a new maximum x position
+#         self.new_max_x_bonus = new_max_x_bonus
+#         # Penalty for staying in the same x position for too long
+#         self.stuck_penalty = stuck_penalty
+#         # Number of frames to consider Mario as stuck
+#         self.stuck_threshold = stuck_threshold
 
-    def reset(self, **kwargs):
-        obs = super().reset(**kwargs)
-        self.max_x_pos = float('-inf')
-        self.last_x_pos = None
-        self.stuck_counter = 0
-        return obs
+#     def reset(self, **kwargs):
+#         obs = super().reset(**kwargs)
+#         self.max_x_pos = float('-inf')
+#         self.last_x_pos = None
+#         self.stuck_counter = 0
+#         return obs
 
-    def step(self, action):
-        obs, reward, done, truncated, info = super().step(action)
+#     def step(self, action):
+#         obs, reward, done, truncated, info = super().step(action)
 
-        x_pos = info['x_pos'] 
+#         x_pos = info['x_pos'] 
 
-        # Bonus for new max x position
-        if x_pos > self.max_x_pos:
-            reward += self.new_max_x_bonus
-            self.max_x_pos = x_pos
+#         # Bonus for new max x position
+#         if x_pos > self.max_x_pos:
+#             reward += self.new_max_x_bonus
+#             self.max_x_pos = x_pos
 
-        # Check if Mario is stuck
-        if x_pos == self.last_x_pos:
-            self.stuck_counter += 1
-            if self.stuck_counter >= self.stuck_threshold:
-                reward += self.stuck_penalty
-                self.stuck_counter = 0  # Reset counter after applying penalty
-        else:
-            self.stuck_counter = 0  # Reset counter if Mario moved
+#         # Check if Mario is stuck
+#         if x_pos == self.last_x_pos:
+#             self.stuck_counter += 1
+#             if self.stuck_counter >= self.stuck_threshold:
+#                 reward += self.stuck_penalty
+#                 self.stuck_counter = 0  # Reset counter after applying penalty
+#         else:
+#             self.stuck_counter = 0  # Reset counter if Mario moved
 
-        self.last_x_pos = x_pos  # Update the last x position for the next step
+#         self.last_x_pos = x_pos  # Update the last x position for the next step
 
-        return obs, reward, done, truncated, info
+#         return obs, reward, done, truncated, info
 
+# Simple reward shaper - used in final agent to give a slight extra reward for x-value progression
 class XValueRewardWrapper(gym.Wrapper):
     def __init__(self, env):
         super().__init__(env)
@@ -157,7 +159,8 @@ class XValueRewardWrapper(gym.Wrapper):
     def reset(self, **kwargs):
         self.prev_x_value = 0
         return self.env.reset(**kwargs) 
-# Remove the top 32 pixels which contain the scoreboard, as it is not relevant to the agent
+    
+# Remove the top 32 pixels which contain the scoreboard, as it is not relevant to the agent, we don't want it to learn to read the score and associate with rewards
 class ClipScoreboardWrapper(gym.ObservationWrapper):
     def __init__(self, env):
         super().__init__(env)
