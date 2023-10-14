@@ -18,8 +18,10 @@
 **Running the Agent:**
 1. Navigate to opencv-agent folder
 2. Edit values inside `cv_agent.py` file to change how agent plays 
-3. Run `python cv_agent.py`
-
+3. Execute the command:
+    ```bash
+    python cv_agent.py
+    ```
 
 Variables available to change are:
 - `CVAgent(debug=[None, 'console', 'detect'])`  
@@ -58,27 +60,54 @@ ___
 To see an analysis of the experiment data, run `python analysis.py`
 
 
-## **DQNN Agent**
-
-**Running the Agent:**
-1. Navigate to manual_agent folder
-2. Check `main.py` and the `RESUME` flag, `True = Continued Training, False = New Training`
-- If you are training a new model, ensure `RESUME = False`
-- Resumed-Training will always presume the latest CheckPoint and continue from latest log.
-- Resumed-Training will carry over episodes, steps and current Epsilon (Exploration Rate).
-4. Run `python main.py`
-
-The Agent will then log to a Time Stamped Directory and the Super Mario Environment will begin training.
-A Model Checkpoint will be saved every `50,000` steps.
-
-<div class="row">
+## **DDQN Agent**
   <div class="column">
     <img src="manual_ddqn_agent/pictures/gameplay.gif" alt="Mario Gif" width="256" height="390">
   </div>
-    
-**Evaluating a Model:**
-1. Navigate to manual_agent folder
-2. Run 'python review.py`` --checkpoint CHECKPOINT_NAME``
-   
-This will create a Tester Environment and an additional logging directory. It will attempt to use the specified model with an ``Epsilon`` of `0.1` (Indicating defined action and no Exploration)
+  <div class="row">
+      
+## **Train the Model:**
+
+1. Navigate to the `manual_ddqn_agent` folder.
+2. Execute the command:
+    ```bash
+    python main.py [--resume]
+    ```
+    - The `--resume` flag indicates that we are resuming training from an existing model.
+    - Without this flag, a new model will be created and training will start from scratch.
+
+### Configurations:
+
+To influence the training parameters, consider adjusting the following:
+
+- In `main.py`:
+  - `episodes`: This defines the total number of episodes to train the model over.
+
+- In `agent.py`:
+  ```python
+  self.batch_size = 64  # Number of experiences to sample. Options: 32, 48, 64
+
+  self.exploration_rate = 1  # Initial exploration rate for epsilon-greedy policy.
+  self.exploration_rate_decay = 0.99999975  # Decay rate for exploration probability.
+  self.exploration_rate_min = 0.1  # Minimum exploration rate.
+
+  self.gamma = 0.9  # Discount factor for future rewards. Typically between 0.9 and 0.99.
+
+  self.burnin = 10000  # Number of steps before training begins.
+
+  self.learn_every = 3  # Frequency (in steps) for the agent to learn from experiences.
+  self.tau = 0.005  # Rate of soft update for the target network.
+  
+  self.sync_every = 1.2e4  # Frequency (in steps) to update the target Q-network with the online Q-network's weights.
+  self.save_every = 50000  # Frequency (in steps) to save the agent's model.
+        `
+**Run a Model:**
+1. Navigate to manual_ddqn_agent folder
+2. Execute the command:
+    ```bash
+   python replay.py --checkpoint [CHECKPOINT_NAME]
+    ```
+   - The `--checkpoint` flag asks for an existing .chkpt that we are testing.
+
+This will create a Tester Environment and an additional logging directory. It will attempt to use the specified model with an ``Epsilon`` of `0.1` (Indicating defined action and little to no Exploration)
 
