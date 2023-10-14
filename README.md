@@ -26,9 +26,15 @@ Variables available to change are:
     None - No debugging  
     'console' - Show console messages  
     'detect' - Show detection screen and console messages
-
-<img src="opencv-agent/report-data/Mario%20Gif.gif" width="200" height="200">
-<img src="opencv-agent/report-data/MarioDetect Gif.gif" width="200" height="200">  
+  
+<div class="row">
+  <div class="column">
+    <img src="opencv-agent/report-data/Mario%20Gif.gif" alt="Mario Gif" width="200" height="200">
+  </div>
+  <div class="column">
+    <img src="opencv-agent/report-data/MarioDetect Gif.gif" width="200" height="200">
+  </div>
+</div>
 
 - `agent.STEPS_PER_ACTION`  
     Number of steps taken before another action is chosen
