@@ -5,7 +5,7 @@
 - Mitchell Otley (23475725)
 - Jack Blackwood (23326698)
 
-#### *Please refer to the project report for breakdown and analysis of the DQNN and OpenCV agents. This README purely describes how to use the agents*
+#### *Please refer to the project report for breakdown and analysis of the DQNN and OpenCV agents. This README purely describes how to run the agents.*
 
 ## Create the conda environment
 1. Navigate to root directory (where environment.yml file is located)
@@ -17,24 +17,28 @@
 
 **Running the Agent:**
 1. Navigate to opencv-agent folder
-2. Edit values inside `cv_agent.py` file to change how agent plays 
+2. Edit values inside `run_agent.py` file to change how agent plays 
 3. Execute the command:
     ```bash
-    python cv_agent.py
+    python run_agent.py
     ```
 
 Variables available to change are:
-- `CVAgent(debug=[None, 'console', 'detect'])`  
-    None - No debugging  
+- `CVAgent(debug = [None, 'console', 'detect'], level = '1-1')`  
+  - `debug`:  
+    None - No debugging (default)  
     'console' - Show console messages  
     'detect' - Show detection screen and console messages
-  
+  - `level`:  
+    The level the agent will play (default is 1-1) 
+
 <div class="row">
   <div class="column">
     <img src="opencv-agent/report-data/Mario%20Gif.gif" alt="Mario Gif" width="200" height="200">
   </div>
   <div class="column">
-    <img src="opencv-agent/report-data/MarioDetect Gif.gif" width="200" height="200">
+    <img src="opencv-agent/report-data/MarioDetect Gif.gif" 
+    alt="Mario Debugging Gif" width="200" height="200">
   </div>
 </div>
 
@@ -57,14 +61,17 @@ Variables available to change are:
 ___
 **Run Analysis**
 
-To see an analysis of the experiment data, run `python analysis.py`
+The experiments are ran by the programs `run_level_1-1.py` and `run_level_1-2.py`:
+- `run_level_1-1.py` tests 847 different simulations of the openCV agent, on level 1-1, with every combination of the following:  
+  - `agent.STEPS_PER_ACTION` in the range (4, 5, 6, 7, 8, 9, 10)
+  - `agent.GOOMBA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
+  - `agent.KOOPA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
+- `run_level_1-2.py` tests the successful combinations of parameters from the above test, on level 1-2.
 
-The experiment run (by the program `run_experiments.py`) tested 847 different simulations of the openCV agent, with every combination of the following:  
-- `agent.STEPS_PER_ACTION` in the range (4, 5, 6, 7, 8, 9, 10)
-- `agent.GOOMBA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
-- `agent.KOOPA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
+Each combination need only be tested once, as the openCV agent will play the exact same way each time a certain combination is provided. Output data is saved to tab separated files (.tsv) in the experiment-data folder.
 
-Each combination need only be tested once, as the openCV agent will play the exact same way each time a certain combination is provided.
+To generate an analysis of the experiment data for level 1-1, run `python analysis_1-1.py`  
+To generate an analysis of the experiment data for level 1-2, run `python analysis_1-2.py`  
 
 ## **DDQN Agent**
   <div class="column">
