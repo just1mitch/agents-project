@@ -31,6 +31,7 @@ if(__name__ == "__main__"):
                 }
                 for goomba in range(GOOMBA_test_range[0], GOOMBA_test_range[1], GOOMBA_test_range[2]):
                     for koopa in range(KOOPA_test_range[0], KOOPA_test_range[1], KOOPA_test_range[2]):
+                        agent.__init__()
                         agent.STEPS_PER_ACTION = spa
                         agent.GOOMBA_RANGE = goomba
                         agent.KOOPA_RANGE = koopa

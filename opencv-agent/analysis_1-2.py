@@ -71,8 +71,8 @@ if(__name__ == "__main__"):
         plt.figure(figsize=(10, 8))
         plt.scatter(time, reward, marker='.', c=colours)
         offset = ((plt.xlim()[1] - plt.xlim()[0])/50, (plt.ylim()[1] - plt.ylim()[0])/75)
-        plt.annotate(f"{[fastest_run[param] for param in params]}", (time[fastest_run_ind], reward[fastest_run_ind]), xytext=(time[fastest_run_ind]+offset[0], reward[fastest_run_ind]+offset[1]), fontsize = 6)
-        plt.annotate(f"{[highest_score[param] for param in params]}", (time[highest_score_ind], reward[highest_score_ind]), xytext=((time[highest_score_ind]+offset[0]), reward[highest_score_ind]+offset[1]), fontsize = 6)
+        plt.annotate(f"{[fastest_run[param] for param in params]}", (time[fastest_run_ind], reward[fastest_run_ind]), xytext=(time[fastest_run_ind]+offset[0], reward[fastest_run_ind]+offset[1]), fontsize = 10)
+        plt.annotate(f"{[highest_score[param] for param in params]}", (time[highest_score_ind], reward[highest_score_ind]), xytext=((time[highest_score_ind]+offset[0]), reward[highest_score_ind]+offset[1]), fontsize = 10)
         plt.xlabel("Time (s)")
         plt.ylabel("Reward")
         plt.title("Performance of OpenCV Agent in Successful Super Mario Bros Level 1-2 Iterations", loc='center', pad=1.5)
@@ -84,20 +84,21 @@ if(__name__ == "__main__"):
 
     highest_score_ind = np.lexsort((datalist['RUN_TIME'], -datalist['RUN_SCORE']))[0]
     highest_score = datalist[highest_score_ind]
-    colours = ['red' if i in [highest_score_ind] else 'blue' for i in range(len(datalist))]
     
     # Scatter plot of all data
     time = [tup[4] for tup in datalist]
     reward = [tup[3] for tup in datalist]
     plt.figure(figsize=(10,8))
-    plt.scatter(time, reward, marker='.', c=colours)
+    plt.scatter(time, reward, marker='.', c='blue')
+    # re-plot highest score so colour dominates on graph
+    plt.scatter(time[highest_score_ind], reward[highest_score_ind], marker='.', c='red')
     offset = ((plt.xlim()[1] - plt.xlim()[0])/50, (plt.ylim()[1] - plt.ylim()[0])/75)
-    plt.annotate(f"{[highest_score[param] for param in params]}", (time[highest_score_ind], reward[highest_score_ind]), xytext=((time[highest_score_ind]+offset[0]), reward[highest_score_ind]+offset[1]), fontsize = 6)
+    plt.annotate(f"{[highest_score[param] for param in params]}", (time[highest_score_ind], reward[highest_score_ind]), xytext=((time[highest_score_ind]+offset[0]), reward[highest_score_ind]+offset[1]), fontsize = 10)
     plt.xlabel("Time (s)")
     plt.ylabel("Reward")
     plt.figtext(0.5, 0.01, "Tests ran on Lenovo Legion 5i, Intel(R) Core(TM) i5-10300H CPU, NVIDIA GeForce GTX 1650Ti\nSee README for testing details", wrap=True, horizontalalignment='center')
     plt.title("Performance of OpenCV Agent in all Super Mario Bros Level 1-2 Iterations", loc='center', pad=1.5)
     figpath = PurePath("opencv-agent/experiment-data/all_1-2_runs.png")
     plt.savefig(figpath)
-
+    print(f"Analysis Complete, plot saved to {figpath}")
     

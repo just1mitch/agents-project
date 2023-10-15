@@ -17,8 +17,9 @@ if(__name__ == "__main__"):
                             ])
     with open(PurePath("opencv-agent/experiment-data/level_1-2_dump.tsv"), 'w') as file:
         file.write("STEPS_PER_ACTION\tGOOMBA_RANGE\tKOOPA_RANGE\tRUN_SCORE\tRUN_TIME\tSTEPS\tX_POS\n")
-        agent = CVAgent(level = '1-2')
+        agent = CVAgent()
         for run in run_list:
+            agent.__init__(level='1-2')
             agent.STEPS_PER_ACTION = run[0]
             agent.GOOMBA_RANGE = run[1]
             agent.KOOPA_RANGE = run[2]

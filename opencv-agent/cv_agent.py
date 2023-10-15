@@ -357,7 +357,7 @@ class CVAgent:
                 break
             step += 1
         
-        # self.env.close() # Uncomment to end run after death
+        self.env.close() # Uncomment to end run after death
         if(metrics and done):
             data = {
                 'run-score': run_score,

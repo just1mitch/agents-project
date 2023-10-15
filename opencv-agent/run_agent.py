@@ -10,7 +10,7 @@ if(__name__ == "__main__"):
     agent.STEPS_PER_ACTION = 5
 
     # Range (in pixels) between Mario and a Goomba before Mario will jump
-    agent.GOOMBA_RANGE = 50
+    agent.GOOMBA_RANGE = 45
 
     # Range (in pixels) between Mario and a Koopa before Mario will jump
     agent.KOOPA_RANGE = 55
