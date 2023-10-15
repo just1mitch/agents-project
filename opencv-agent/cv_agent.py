@@ -351,10 +351,8 @@ class CVAgent:
             obs, reward, terminated, truncated, info = self.env.step(action)
             run_score += reward
             done = terminated or truncated
-            if(info['x_pos'] >= 1200):
-                print("stop")
             if done:
-                if(metrics): runtime = (time.time_ns() - start) / 1000000000
+                if(metrics): runtime = (time.time_ns() - start) / 1000000000 # convert to seconds
                 if(self.DEBUG is not None): print(f"Reward for run: {run_score}")
                 break
             step += 1

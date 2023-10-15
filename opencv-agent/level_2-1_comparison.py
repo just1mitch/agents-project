@@ -2,6 +2,8 @@ import numpy as np
 from pathlib import PurePath
 from matplotlib import pyplot as plt
 
+## Generate a scatter plot comparison of all 3 Agents on Level 2-1
+
 # OpenCV Agent data
 opencvpath = PurePath("opencv-agent/experiment-data/level_2-1_dump.tsv")
 opencv_data = np.loadtxt(opencvpath,

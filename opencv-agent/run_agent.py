@@ -4,7 +4,7 @@ if(__name__ == "__main__"):
     ## If DEBUG == None - no debugging
     ## If DEBUG == "console" - show console messages
     ## If DEBUG == "detect" - show detection screen and console messages
-    agent = CVAgent(debug=None, level='2-1')
+    agent = CVAgent(debug=None, level='1-1')
 
     # Number of steps taken before another action is chosen
     agent.STEPS_PER_ACTION = 8
@@ -18,4 +18,3 @@ if(__name__ == "__main__"):
     # If metrics = True, a dictionary containing results of the run are returned
     print(f"Run statistics:\n{agent.play(metrics=True)}")
 
-# 4 40 50
