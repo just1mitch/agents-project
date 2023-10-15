@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from pathlib import PurePath
 
-datafile = PurePath("opencv-agent/experiment-data/level_1-2_dump.tsv")
+path = PurePath("opencv-agent/experiment-data/level_2-1_dump.tsv")
 
 # Get all runs from the list of iterations where reward
 # score is over 3000 (associated with a level completion)
@@ -12,8 +12,8 @@ def get_successful_runs(datalist):
 
 # Parse a tab separated file for the data
 def get_datalist(file):
-    with open(datafile, 'r') as file:
-        data = reader(file, delimiter="\t", )
+    with open(file, 'r') as datafile:
+        data = reader(datafile, delimiter="\t")
         datalist = []
         next(data)
         for line in data:
@@ -36,7 +36,7 @@ def get_datalist(file):
 
 if(__name__ == "__main__"):
     
-    datalist = get_datalist(datafile)
+    datalist = get_datalist(path)
     params = ['SPA', 'GOOMBA', 'KOOPA']
 
     # Data analysis on winning runs (where reward is greater than 3000)
@@ -75,9 +75,9 @@ if(__name__ == "__main__"):
         plt.annotate(f"{[highest_score[param] for param in params]}", (time[highest_score_ind], reward[highest_score_ind]), xytext=((time[highest_score_ind]+offset[0]), reward[highest_score_ind]+offset[1]), fontsize = 10)
         plt.xlabel("Time (s)")
         plt.ylabel("Reward")
-        plt.title("Performance of OpenCV Agent in Successful Super Mario Bros Level 1-2 Iterations", loc='center', pad=1.5)
+        plt.title("Performance of OpenCV Agent in Successful Super Mario Bros Level 2-1 Iterations", loc='center', pad=1.5)
         plt.figtext(0.5, 0.01, "Tests ran on Lenovo Legion 5i, Intel(R) Core(TM) i5-10300H CPU, NVIDIA GeForce GTX 1650Ti\nSee README for testing details", wrap=True, horizontalalignment='center')
-        figpath = PurePath("opencv-agent/experiment-data/successful_1-2_runs.png")
+        figpath = PurePath("opencv-agent/experiment-data/successful_2-1_runs.png")
         plt.savefig(figpath)
         print(f"Analysis Complete, plot saved to {figpath}")
 
@@ -97,8 +97,8 @@ if(__name__ == "__main__"):
     plt.xlabel("Time (s)")
     plt.ylabel("Reward")
     plt.figtext(0.5, 0.01, "Tests ran on Lenovo Legion 5i, Intel(R) Core(TM) i5-10300H CPU, NVIDIA GeForce GTX 1650Ti\nSee README for testing details", wrap=True, horizontalalignment='center')
-    plt.title("Performance of OpenCV Agent in all Super Mario Bros Level 1-2 Iterations", loc='center', pad=1.5)
-    figpath = PurePath("opencv-agent/experiment-data/all_1-2_runs.png")
+    plt.title("Performance of OpenCV Agent in all Super Mario Bros Level 2-1 Iterations", loc='center', pad=1.5)
+    figpath = PurePath("opencv-agent/experiment-data/all_2-1_runs.png")
     plt.savefig(figpath)
     print(f"Analysis Complete, plot saved to {figpath}")
     

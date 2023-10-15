@@ -61,17 +61,17 @@ Variables available to change are:
 ___
 **Run Analysis**
 
-The experiments are ran by the programs `run_level_1-1.py` and `run_level_1-2.py`:
+The experiments are ran by the programs `run_level_1-1.py` and `run_level_2-1.py`:
 - `run_level_1-1.py` tests 847 different simulations of the openCV agent, on level 1-1, with every combination of the following:  
   - `agent.STEPS_PER_ACTION` in the range (4, 5, 6, 7, 8, 9, 10)
   - `agent.GOOMBA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
   - `agent.KOOPA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
-- `run_level_1-2.py` tests the successful combinations of parameters from the above test, on level 1-2.
+- `run_level_2-1.py` tests the successful combinations of parameters from the above test, on level 2-1.
 
 Each combination need only be tested once, as the openCV agent will play the exact same way each time a certain combination is provided. Output data is saved to tab separated files (.tsv) in the experiment-data folder.
 
 To generate an analysis of the experiment data for level 1-1, run `python analysis_1-1.py`  
-To generate an analysis of the experiment data for level 1-2, run `python analysis_1-2.py`  
+To generate an analysis of the experiment data for level 2-1, run `python analysis_2-1.py`  
 
 ## **DDQN Agent**
   <div class="column">

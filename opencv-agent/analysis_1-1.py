@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from pathlib import PurePath
 
-datafile = PurePath("opencv-agent/experiment-data/level_1-1_dump.tsv")
+path = PurePath("opencv-agent/experiment-data/level_1-1_dump.tsv")
 
 # Get all runs from the list of iterations where reward
 # score is over 3000 (associated with a level completion)
@@ -12,8 +12,8 @@ def get_successful_runs(datalist):
 
 # Parse a tab separated file for the data
 def get_datalist(file):
-    with open(datafile, 'r') as file:
-        data = reader(file, delimiter="\t", )
+    with open(file, 'r') as datafile:
+        data = reader(datafile, delimiter="\t")
         datalist = []
         next(data)
         for line in data:
@@ -35,7 +35,7 @@ def get_datalist(file):
 
 if(__name__ == "__main__"):
     
-    datalist = get_datalist(datafile)
+    datalist = get_datalist(path)
 
     # Data analysis on winning runs (where reward is greater than 3000)
     successful_runs = get_successful_runs(datalist)

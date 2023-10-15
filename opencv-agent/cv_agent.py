@@ -171,7 +171,7 @@ class CVAgent:
                     # if block is not under mario, apply text
 
                     if(mario_locations and block[0][1] - mario_locations[0][0][1] < 0):
-                        cv.putText(frame, name, (pt2[0], pt1[1]), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3, color=1)
+                        cv.putText(frame, name, (pt2[0], pt1[1]), color=(255,255,255), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3)
             cv.imshow("DEBUG: Detections", frame)
             if cv.waitKey(1)&0xFF == ord('q'): pass
         
@@ -351,6 +351,8 @@ class CVAgent:
             obs, reward, terminated, truncated, info = self.env.step(action)
             run_score += reward
             done = terminated or truncated
+            if(info['x_pos'] >= 1200):
+                print("stop")
             if done:
                 if(metrics): runtime = (time.time_ns() - start) / 1000000000
                 if(self.DEBUG is not None): print(f"Reward for run: {run_score}")
