@@ -1,0 +1,17 @@
+Model mario_net_44.chkpt crossed 1200 in episode 4 with 384 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 19 with 353 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 27 with 212 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 28 with 238 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 33 with 264 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 39 with 247 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 41 with 199 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 43 with 182 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 57 with 305 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 61 with 183 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 76 with 365 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 85 with 344 steps.
+Model mario_net_44.chkpt crossed 1200 in episode 86 with 386 steps.
+DDQN Model mario_net_44.chkpt surpassed x-position 1200 13 times over 100 episodes.
+DDQN Model mario_net_44.chkpt took an average of 2235375.00 steps to surpass x-position 1200.
+([4, 19, 27, 28, 33, 39, 41, 43, 57, 61, 76, 85, 86],
+ [384, 353, 212, 238, 264, 247, 199, 182, 305, 183, 365, 344, 386])

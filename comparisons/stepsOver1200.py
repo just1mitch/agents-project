@@ -1,0 +1,128 @@
+import matplotlib.pyplot as plt
+
+episodes_ddqn = [4, 19, 27, 28, 33, 39, 41, 43, 57, 61, 76, 85, 86]
+steps_ddqn = [384, 353, 212, 238, 264, 247, 199, 182, 305, 183, 365, 344, 386]
+
+episodes_ppo = [2,
+  3,
+  7,
+  8,
+  9,
+  10,
+  14,
+  15,
+  16,
+  17,
+  20,
+  21,
+  24,
+  27,
+  30,
+  31,
+  32,
+  34,
+  35,
+  36,
+  41,
+  43,
+  46,
+  47,
+  51,
+  52,
+  54,
+  56,
+  57,
+  59,
+  60,
+  61,
+  63,
+  64,
+  66,
+  67,
+  69,
+  70,
+  72,
+  74,
+  79,
+  80,
+  82,
+  83,
+  87,
+  88,
+  91,
+  92,
+  93,
+  94,
+  95,
+  98,
+  99]
+steps_ppo = [701,
+  1253,
+  852,
+  1093,
+  1019,
+  1016,
+  632,
+  1807,
+  736,
+  1689,
+  1250,
+  1153,
+  561,
+  1399,
+  1296,
+  622,
+  797,
+  558,
+  661,
+  1294,
+  731,
+  903,
+  1078,
+  648,
+  1012,
+  573,
+  505,
+  762,
+  1110,
+  602,
+  913,
+  860,
+  507,
+  1012,
+  643,
+  1388,
+  647,
+  1200,
+  547,
+  1276,
+  1271,
+  590,
+  1075,
+  441,
+  1676,
+  651,
+  1506,
+  890,
+  841,
+  695,
+  689,
+  936,
+  466]
+
+plt.figure(figsize=(12, 8))
+
+plt.scatter(episodes_ddqn, steps_ddqn, c='red', label='DDQN', marker='x')
+
+
+plt.scatter(episodes_ppo, steps_ppo, c='blue', label='PPO', marker='o')
+
+plt.axhline(y=676, color='green', linestyle='-', label='OpenCV')
+
+plt.title("Episode vs Steps for Models Crossing X = 1200")
+plt.xlabel("Episode")
+plt.ylabel("Steps")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()

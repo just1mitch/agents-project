@@ -11,7 +11,7 @@ from stable_baselines3.common.vec_env import VecFrameStack
 import cv2
 import os
 import argparse
-
+from PIL import Image
 parser = argparse.ArgumentParser(description="Mario SB3-PPO Evaluator")
 parser.add_argument('--render', action='store_true', help="Show a Model in action using render output.")
 args = parser.parse_args()
@@ -36,12 +36,15 @@ class RemoveSeedWrapper(gym.Wrapper):
         kwargs.pop('seed', None)
         kwargs.pop('options', None)
         return super().reset(**kwargs)
+    
+def log_to_file(log_filename, reward, steps, episode):
+    with open(log_filename, 'a') as log_file:
+        log_file.write(f"{episode},{reward},{steps}\n")
 
-
-def evaluate_model(file_path, episodes=10, visible=False):
+def evaluate_model(file_path, episodes=75, visible=False):
     """Evaluate a model using the specified number of episodes"""
     # Create a standard Super Mario Bros environment
-    env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
+    env = gym.make('SuperMarioBros-1-1-v0', apply_api_compatibility=True, render_mode="rgb_array")
     env = JoypadSpace(env, SIMPLE_MOVEMENT)
     env = RemoveSeedWrapper(env)
     env = GrayScaleObservation(env)
@@ -54,6 +57,10 @@ def evaluate_model(file_path, episodes=10, visible=False):
     model = PPO.load(file_path)
     total_distance = 0
     model_filename = os.path.basename(file_path)
+    log_filename = os.path.splitext(file_path)[0] + "_log.txt"
+    frames = []
+    crossed_1200_count = 0
+    total_steps_to_cross_1200 = 0
     for episode in range(episodes):
         # Reset the environment and get the initial observation for a run
         obs = env.reset()
@@ -66,6 +73,7 @@ def evaluate_model(file_path, episodes=10, visible=False):
             obs, _, done, info = env.step(action)
             if visible:
                 frame = np.ascontiguousarray(env.render())
+                
                 # Add some overlay text to the frame
                 metrics_space = np.zeros((150, 256, 3), dtype=np.uint8)
                 cv2.putText(metrics_space, f"Action: {action}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -76,6 +84,7 @@ def evaluate_model(file_path, episodes=10, visible=False):
                 combined_frame = np.vstack((metrics_space, frame))
                             
                 cv2.imshow('Super Mario Bros with Overlays', combined_frame)
+                frames.append(combined_frame)
                 cv2.waitKey(1)
             steps += 1
 
@@ -86,14 +95,17 @@ def evaluate_model(file_path, episodes=10, visible=False):
                 
             # Check if Mario gets past 1200
             elif info[0]['x_pos'] > 1200 and not crossed_1200_message_printed:
+                crossed_1200_count += 1
+                total_steps_to_cross_1200 += steps
                 print(f"Model {file_path} crossed 1200 in episode {episode+1} with {steps} steps.")
                 crossed_1200_message_printed = True
 
         total_distance += info[0]['x_pos']
+        log_to_file(log_filename, info[0]['x_pos'], steps, episode+1)
         if visible: cv2.destroyAllWindows()
-    
+    average_steps_to_cross_1200 = total_steps_to_cross_1200 / crossed_1200_count if crossed_1200_count != 0 else 0
     env.close()
-    return total_distance / episodes
+    return total_distance / episodes, frames, crossed_1200_count, average_steps_to_cross_1200
 
 
 def load_and_evaluate_models():
@@ -109,12 +121,19 @@ def load_and_evaluate_models():
     best_model_path = ""
     
     for file_path in file_paths:
-        avg_distance = evaluate_model(file_path, visible=RENDER)
+        avg_distance, frames, crossed_1200_count, average_steps_to_cross_1200 = evaluate_model(file_path, visible=RENDER)
         print(f"Model {file_path} achieved an average distance of {avg_distance:.2f}")
-        
+        print(f"PPO Model {file_path} surpassed x-position 1200 {crossed_1200_count} times over {100} episodes.")
+        print(f"PPO Model {file_path} took an average of {average_steps_to_cross_1200:.2f} steps to surpass x-position 1200.")
         if avg_distance > best_distance:
             best_distance = avg_distance
             best_model_path = file_path
+        
+        if RENDER and frames:
+            gif_path = os.path.splitext(file_path)[0] + ".gif"
+            frames_pil = [Image.fromarray(frame) for frame in frames]
+            frames_pil[0].save(gif_path, save_all=True, append_images=frames_pil[1:], loop=0, duration=40)
+            print(f"Gameplay saved as {gif_path}")
 
     print(f"\nThe best model is {best_model_path} with an average distance of {best_distance:.2f}")
 
