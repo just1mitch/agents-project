@@ -9,9 +9,11 @@
 
 ## Create the conda environment
 1. Navigate to root directory (where environment.yml file is located)
-2. In a conda shell, run `conda env create -f environment.yml`
+2. In a conda shell, run `conda env create -f env.yml`
 3. Once environment is created, run `conda activate mario`
 4. Follow steps to run the agents from within the environment
+
+> If you plan to train/run any of the RL Agents (DDQN and SB3 PPO) it is reccomended to install PyTorch and it's requirements locally to take advantage of a CUDA GPU https://pytorch.org/get-started/locally/
 
 ## **OpenCV Agent**
 
@@ -81,6 +83,7 @@ Each combination need only be tested once, as the openCV agent will play the exa
     ```
     - The `--resume` flag indicates that we are resuming training from an existing model.
     - Without this flag, a new model will be created and training will start from scratch.
+    - The latest Checkpoint will be selected from the working directory.
 
 ### Configurations:
 
@@ -111,9 +114,57 @@ To influence the training parameters, consider adjusting the following:
 1. Navigate to manual_ddqn_agent folder
 2. Execute the command:
     ```bash
-   python replay.py --checkpoint [CHECKPOINT_NAME]
+   python replay.py --checkpoint [CHECKPOINT_NAME] [--render]
     ```
    - The `--checkpoint` flag asks for an existing .chkpt that we are testing.
+   - The `--render` flag will signify if we should display the agent while it runs.
 
 This will create a Tester Environment and an additional logging directory. It will attempt to use the specified model with an ``Epsilon`` of `0.1` (Indicating defined action and little to no Exploration)
 
+## **SB3 PPO Agent**
+  <div class="column">
+    <img src="sb3-ppo-agent/pictures/model_1300000.gif" alt="Mario Gif" width="256" height="390">
+  </div>
+  <div class="row">
+      
+## **Train the Model:**
+
+1. Navigate to the `sb3-ppo-agent` folder.
+2. Execute the command:
+    ```bash
+    python agentReTrain.py [--resume]
+    ```
+    - The `--resume` flag indicates that we are resuming training from an existing model.
+    - Without this flag, a new model will be created and training will start from scratch.
+    - A File Dialogue will open allowing us to specify a Model rather than the choose the latest.
+3. Execute the command:
+   ```bash
+   tensorboard --logdir=.
+   ```
+   - If Tensorboard is installed, this will allow insight into training metrics of current and historical training.
+### Configurations:
+
+To influence the training parameters, consider adjusting the following:
+
+- In `agentReTrain.py`:
+  - `total_timesteps`: This defines the total number of time steps to train the model over.
+  ```python
+          model = PPO("CnnPolicy", env, policy_kwargs=policy_kwargs, verbose=1, 
+                tensorboard_log=LOG_DIR, learning_rate=0.00001, 
+                n_steps=512, device="cuda")
+  #n_steps - how many steps to sample an experience from
+  #learning_rate - define the learning rate of the agent, a lower value may make less signficant changes but converge faster. 
+  ```
+  
+**Run a Model:**
+1. Navigate to `sb3-ppo-agent` folder
+2. Execute the command:
+    ```bash
+   python eval.py [--render]
+    ```
+   - The script will open a File Dialogue to select a Model to evaluate.
+   - Multiple Model may be selected to compare.
+   - The `--render` flag will signify if we should display the agent while it runs.
+
+This will create a Tester Environment and send metrics to the Console, and a logging file.
+If multiple Model have been selected, it will output the Model that had the highest average distance X.
