@@ -17,6 +17,10 @@ print(torch.cuda.is_available())
 
 import tkinter as tk
 from tkinter import filedialog
+
+# Initial PPO guide: https://github.com/nicknochnack/MarioRL/blob/main/Mario%20Tutorial.ipynb
+# Heavily expanded upon and modified to suit the needs of the project
+
 # Simple helper function to get the model path
 def get_model_path():
     root = tk.Tk()
@@ -33,6 +37,8 @@ MODEL_PATH = "ppo_mario"
 from gym.wrappers import ResizeObservation
 
 # Like DDQN, but with a combined wrapper to rescale and normalize the observation
+# SB3 expects an observation space of (1, 84, 84) - (channel, width, height) - 
+# but at this stage the observation space doesn't have a channel due to GreyScaleObservation
 class CustomReshapeAndResizeObs(gym.ObservationWrapper):
     """Reshape observation into (1, 84, 84) and rescale values into [0, 1]"""
     def __init__(self, env, shape=(84, 84)):
@@ -113,7 +119,7 @@ if __name__ == "__main__":
             return env
         return _init
     
-# Simple Call back to save the model every X steps: https://github.com/nicknochnack/MarioRL/blob/main/Mario%20Tutorial.ipynb
+# Simple Call back to save the model every X steps defined in the init: https://github.com/nicknochnack/MarioRL/blob/main/Mario%20Tutorial.ipynb
     class TrainAndLoggingCallback(BaseCallback):
         def __init__(self, check_freq, save_path, verbose=1):
             super(TrainAndLoggingCallback, self).__init__(verbose)
@@ -176,13 +182,22 @@ if __name__ == "__main__":
 
     # Frame stacking with 4 frames, 4 seems to work best.
     # Noticed that 4 frames are stacked on the Width, not the channel. So the shape is (1, 84, 84*4) instead of (4, 84, 84)
+    # However this is an acceptable input for the CNN per SB3
     n_stack = 4
     env = VecFrameStack(env, n_stack=n_stack)
 
     # Hyperparameters
     #PPO_3 2048, 0.00025
+    #PPO_4 512, 0.00001
+    #PPO_5 512, 0.000001
+    #PPO_6 512, 0.0000001 w/ Reward Shape
+    #...
+
+    # Refer to /logs and /logs_old_models for TensorBoard logs of different training runs - /logs_old_models 1-10 will be the most relevant and show the different tuning attempts
     n_steps = 512 # Tested with 128, 512, 2048
     total_timesteps = 10000000000 # Set arbitrarily high number to train for as long as possible
+
+    # entropy_coef = 0.01 - also something to tune that impacts exploration, but we have left it at the default value.
 
     # Initialize PPO algorithm with NatureCNN - predefined CNN architecture for an image space observation
     policy_kwargs = {
@@ -210,7 +225,7 @@ if __name__ == "__main__":
             print("Model not found. Creating a new one.")
     else:
         print("Creating a new model.")
-        # Learning Rate suggested 0.000001 - but training was slow, final model produced with the following:
+        # Learning Rate suggested 0.000001 - but training was slow, final model produced with the following
         model = PPO("CnnPolicy", env, policy_kwargs=policy_kwargs, verbose=1, 
                 tensorboard_log=LOG_DIR, learning_rate=0.00001, 
                 n_steps=512, device="cuda")

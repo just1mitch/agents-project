@@ -10,11 +10,13 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecFrameStack
 import cv2
 
-# Basic Test Script to load and run a model, for a more advanced example see eval.py which contains more useful wrappers and information compared to this script.
+# Basic Test Script to load and run a model.
+
+# This was used initially to test the model and to see if it was working as intended, it was later replaced by eval.py which is a more advanced version of this script
 
 # Wrapper to remove seed and options from reset
 
-# Sake of simplicity, we use the same wrappers
+# Sake of simplicity, we use the same wrappers as main.py
 class CustomReshapeAndResizeObs(gym.ObservationWrapper):
     def __init__(self, env, shape=(84, 84)):
         super(CustomReshapeAndResizeObs, self).__init__(env)

@@ -12,6 +12,7 @@ from metrics import MetricLogger
 from agent import Mario
 from wrappers import ResizeObservation, SkipFrame, RemoveSeedWrapper, XValueRewardWrapper, ClipScoreboardWrapper
 import argparse
+
 # Much of the agent is derived from the following sources:
 # https://blog.paperspace.com/building-double-deep-q-network-super-mario-bros/
 # https://pytorch.org/tutorials/intermediate/mario_rl_tutorial.html

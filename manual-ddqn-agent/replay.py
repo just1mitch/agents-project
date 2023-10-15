@@ -18,7 +18,11 @@ import argparse
 # Much of the replay is derrived from: https://github.com/yfeng997/MadMario/blob/master/replay.py
 # Additional code is added to display the metrics on the screen and to display the current action being taken by the agent
 
-# For further information on the setup of replay.py, please refer to main.py as this is a modified version of the main.py file
+# Quick extra - logging of data for experimental use
+
+# Assumption - if a GPU is available, use it - CPU redundancy is not implemented - this agent is not designed to be trained and run on a CPU exclusively
+
+# For further information on the setup of replay.py, please refer to main.py as this is a modified version of the main.py file and it shares many of the same features
 
 def displayMetrics(frame):
     # Create a blank space to display the metrics
@@ -32,9 +36,12 @@ def displayMetrics(frame):
     combined_frame = np.vstack((metrics_space, frame))
     return combined_frame
 
+# Quick logger
 def log_to_file(log_filename, reward, steps, episode):
     with open(log_filename, 'a') as log_file:
         log_file.write(f"{episode},{reward},{steps}\n")
+
+# Parse an argument for the checkpoint file and whether to render the model so that the metrics can be displayed on the screen
 parser = argparse.ArgumentParser(description="Run the Mario agent with a specified checkpoint.")
 parser.add_argument('--checkpoint', type=str, required=True, help="Path to the checkpoint file.")
 parser.add_argument('--render', action='store_true', help="Show a Model in action using render output.")
@@ -42,7 +49,8 @@ args = parser.parse_args()
 
 RENDER = args.render
 
-env = gym_super_mario_bros.make('SuperMarioBros-1-1-v0', apply_api_compatibility=True, render_mode='rgb_array') # Set render_mode to rgb_array to get the rendered frames
+# Set up the environment with the wrappers - must be the same as main.py
+env = gym_super_mario_bros.make('SuperMarioBros-1-1-v0', apply_api_compatibility=True, render_mode='rgb_array') # Set render_mode to rgb_array to get the rendered frames as an array
 env = ClipScoreboardWrapper(env)
 env = JoypadSpace(
     env,
@@ -54,7 +62,7 @@ env = SkipFrame(env, skip=4)
 env = GrayScaleObservation(env, keep_dim=False)
 env = ResizeObservation(env, shape=84)
 env = TransformObservation(env, f=lambda x: x / 255.)
-env = XValueRewardWrapper(env)
+env = XValueRewardWrapper(env) #- optional for the replay
 env = FrameStack(env, num_stack=4)
 
 env.reset()
@@ -64,6 +72,7 @@ save_dir.mkdir(parents=True)
 
 checkpoint = Path(args.checkpoint)
 log_filename = os.path.splitext(checkpoint)[0] + "_log.txt"
+# Create the Mario agent
 mario = Mario(state_dim=(4, 84, 84), action_dim=env.action_space.n, save_dir=save_dir, checkpoint=checkpoint)
 
 # Set the exploration rate to min so that the agent will rely on it's policy to exploit
@@ -94,7 +103,7 @@ for e in range(episodes):
             cv2.imshow('Super Mario Bros with Overlays', displayMetrics(frame))
             cv2.waitKey(1)
         steps += 1
-        total_steps_to_cross_1200 += steps
+        
         next_state = np.array(next_state)
         mario.cache(state, next_state, action, reward, done)
 
@@ -109,6 +118,7 @@ for e in range(episodes):
             # Check if Mario gets past 1200
         elif info['x_pos'] > 1200 and not crossed_1200_message_printed:
             crossed_1200_count += 1
+            total_steps_to_cross_1200 += steps
             print(f"Model {checkpoint} crossed 1200 in episode {e+1} with {steps} steps.")
             crossed_1200_message_printed = True
 
@@ -117,7 +127,9 @@ for e in range(episodes):
     if RENDER:
         cv2.destroyAllWindows()
     logger.log_episode()
+    # Log every episode quickly to a simple log file
     log_to_file(log_filename, info['x_pos'], steps, e+1)
+    # Send to the actual logger for proper data handling
     if e % 1 == 0:
         logger.record(
             episode=e,

@@ -125,9 +125,9 @@ class MetricLogger():
             self.plot_metrics()
 
 
-# Matplotlib code to plot metrics
+# Matplotlib to plot metrics
     def plot_metrics(self):
-        metrics = ["ep_rewards", "ep_lengths", "ep_avg_losses", "ep_avg_qs", "ep_max_xs"]  # Added ep_max_xs
+        metrics = ["ep_rewards", "ep_lengths", "ep_avg_losses", "ep_avg_qs", "ep_max_xs"]  # Added ep_max_xs which is useful to associate with reward
         titles = ["Episode Rewards", "Episode Lengths", "Episode Avg Losses", "Episode Avg Qs", "Episode Max X Reached"]
 
         for metric, title in zip(metrics, titles):
