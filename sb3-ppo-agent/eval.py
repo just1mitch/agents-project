@@ -9,7 +9,14 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecFrameStack
 import cv2
+import os
+import argparse
 
+parser = argparse.ArgumentParser(description="Mario SB3-PPO Evaluator")
+parser.add_argument('--render', action='store_true', help="Show a Model in action using render output.")
+args = parser.parse_args()
+
+RENDER = args.render
 # Wrapper to remove seed and options from reset
 class CustomReshapeAndResizeObs(gym.ObservationWrapper):
     def __init__(self, env, shape=(84, 84)):
@@ -23,14 +30,18 @@ class CustomReshapeAndResizeObs(gym.ObservationWrapper):
         observation = cv2.resize(observation, self.shape, interpolation=cv2.INTER_AREA)
         # Normalize and reshape
         return np.expand_dims(observation.astype(np.float32) / 255.0, axis=0)
+
 class RemoveSeedWrapper(gym.Wrapper):
     def reset(self, **kwargs):
         kwargs.pop('seed', None)
         kwargs.pop('options', None)
         return super().reset(**kwargs)
 
-def evaluate_model(file_path, episodes=10):
-    env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="human")
+
+def evaluate_model(file_path, episodes=10, visible=False):
+    """Evaluate a model using the specified number of episodes"""
+    # Create a standard Super Mario Bros environment
+    env = gym.make('SuperMarioBros-v0', apply_api_compatibility=True, render_mode="rgb_array")
     env = JoypadSpace(env, SIMPLE_MOVEMENT)
     env = RemoveSeedWrapper(env)
     env = GrayScaleObservation(env)
@@ -38,21 +49,52 @@ def evaluate_model(file_path, episodes=10):
     env = CustomReshapeAndResizeObs(env, shape=(84, 84))
     env = DummyVecEnv([lambda: env])
     env = VecFrameStack(env, n_stack=4)
-    
+    # Should match the env used for training
+    #env = VecMonitor(env, filename=None, keep_buf=100)
     model = PPO.load(file_path)
     total_distance = 0
-    
+    model_filename = os.path.basename(file_path)
     for episode in range(episodes):
+        # Reset the environment and get the initial observation for a run
         obs = env.reset()
         done = False
+        steps = 0
+        flag_get_message_printed = False
+        crossed_1200_message_printed = False
         while not done:
             action, _ = model.predict(obs)
             obs, _, done, info = env.step(action)
-            env.render()
+            if visible:
+                frame = np.ascontiguousarray(env.render())
+                # Add some overlay text to the frame
+                metrics_space = np.zeros((150, 256, 3), dtype=np.uint8)
+                cv2.putText(metrics_space, f"Action: {action}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                cv2.putText(metrics_space, f"Model: {model_filename}", (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                cv2.putText(metrics_space, f"Episode: {episode}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                cv2.putText(metrics_space, f"Step: {steps}", (10, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                cv2.putText(metrics_space, f"X-Pos: {info[0]['x_pos']}", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                combined_frame = np.vstack((metrics_space, frame))
+                            
+                cv2.imshow('Super Mario Bros with Overlays', combined_frame)
+                cv2.waitKey(1)
+            steps += 1
+
+            # Check if Mario completes the level using flag_get
+            if info[0]['flag_get'] and not flag_get_message_printed:
+                print(f"Model {file_path} completed the level in episode {episode+1} with {steps} steps.")
+                flag_get_message_printed = True
+                
+            # Check if Mario gets past 1200
+            elif info[0]['x_pos'] > 1200 and not crossed_1200_message_printed:
+                print(f"Model {file_path} crossed 1200 in episode {episode+1} with {steps} steps.")
+                crossed_1200_message_printed = True
+
         total_distance += info[0]['x_pos']
+        if visible: cv2.destroyAllWindows()
     
     env.close()
     return total_distance / episodes
+
 
 def load_and_evaluate_models():
     root = tk.Tk()
@@ -67,7 +109,7 @@ def load_and_evaluate_models():
     best_model_path = ""
     
     for file_path in file_paths:
-        avg_distance = evaluate_model(file_path)
+        avg_distance = evaluate_model(file_path, visible=RENDER)
         print(f"Model {file_path} achieved an average distance of {avg_distance:.2f}")
         
         if avg_distance > best_distance:

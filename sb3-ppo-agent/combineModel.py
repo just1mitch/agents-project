@@ -2,6 +2,8 @@ import gym
 import torch
 from stable_baselines3 import PPO
 
+# Unused / untested in this project - but may be useful in the future
+
 # Load the pre-trained models
 model1 = PPO.load('./train/best_model.zip')
 model2 = PPO.load('./train/best_model_500000.zip')

@@ -10,7 +10,11 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.vec_env import VecFrameStack
 import cv2
 
+# Basic Test Script to load and run a model, for a more advanced example see eval.py which contains more useful wrappers and information compared to this script.
+
 # Wrapper to remove seed and options from reset
+
+# Sake of simplicity, we use the same wrappers
 class CustomReshapeAndResizeObs(gym.ObservationWrapper):
     def __init__(self, env, shape=(84, 84)):
         super(CustomReshapeAndResizeObs, self).__init__(env)
@@ -28,39 +32,6 @@ class RemoveSeedWrapper(gym.Wrapper):
         kwargs.pop('seed', None)
         kwargs.pop('options', None)
         return super().reset(**kwargs)
-
-class MarioRewardShapingWrapper(gym.Wrapper):
-    def __init__(self, env):
-        super(MarioRewardShapingWrapper, self).__init__(env)
-        self.last_x_pos = 0
-
-    def reset(self, **kwargs):
-        self.last_x_pos = 0
-        return self.env.reset(**kwargs)
-
-    def step(self, action):
-        state, reward, done, truncated, info = self.env.step(action)
-        x_pos = info.get('x_pos', 0)
-
-        # Give a small reward for moving right
-        reward += (x_pos - self.last_x_pos) * 0.01 * x_pos
-
-        # Give a large reward for finishing the level
-        if info.get('flag_get', False):
-            reward += 10000
-
-        # Give a bonus reward for reaching further than 1600 on the X
-        if x_pos > 1600:
-            reward += 500
-        # Give incremental bonus for reaching further than 1600 on the X
-        if x_pos > 2000:
-            reward += 100
-
-
-        # Update the last x position
-        self.last_x_pos = x_pos
-
-        return state, reward, done, truncated, info
 
 def load_and_run_model():
     # Open a file dialog and get the selected file path

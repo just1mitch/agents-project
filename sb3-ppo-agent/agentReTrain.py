@@ -12,21 +12,29 @@ from gym.wrappers import GrayScaleObservation
 import torch
 import cv2
 from stable_baselines3.common.evaluation import evaluate_policy
+import argparse
 print(torch.cuda.is_available())
 
 import tkinter as tk
 from tkinter import filedialog
+# Simple helper function to get the model path
 def get_model_path():
     root = tk.Tk()
     root.withdraw()  # This hides the root window
     file_path = filedialog.askopenfilename(title="Select the Model", filetypes=[('Model Files', '*.zip')])
     return file_path
 
-RESUME_TRAINING = True
+parser = argparse.ArgumentParser(description="Mario SB3-PPO Trainer")
+parser.add_argument('--resume', action='store_true', help="Resume training from the selected model.")
+args = parser.parse_args()
+
+RESUME_TRAINING = args.resume
 MODEL_PATH = "ppo_mario"
 from gym.wrappers import ResizeObservation
 
+# Like DDQN, but with a combined wrapper to rescale and normalize the observation
 class CustomReshapeAndResizeObs(gym.ObservationWrapper):
+    """Reshape observation into (1, 84, 84) and rescale values into [0, 1]"""
     def __init__(self, env, shape=(84, 84)):
         super(CustomReshapeAndResizeObs, self).__init__(env)
         old_shape = self.observation_space.shape
@@ -38,13 +46,17 @@ class CustomReshapeAndResizeObs(gym.ObservationWrapper):
         observation = cv2.resize(observation, self.shape, interpolation=cv2.INTER_AREA)
         # Normalize and reshape
         return np.expand_dims(observation.astype(np.float32) / 255.0, axis=0)
+# This wrapper removes the seed from the environment, which would otherwise be incompatible due to version differences
 class RemoveSeedWrapper(gym.Wrapper):
+    """Remove seed"""
     def reset(self, **kwargs):
         kwargs.pop('seed', None)
         kwargs.pop('options', None)
         return super().reset(**kwargs)
 
+# Wrapper to enhance the reward function - successful in training without this.
 class EnhancedRewardWrapper(gym.Wrapper):
+    """Optional reward wrapper"""
     def __init__(self, env, new_max_x_bonus=5, stuck_penalty=-3, stuck_threshold=100):
         super(EnhancedRewardWrapper, self).__init__(env)
         self.max_x_pos = float('-inf')  # Keep track of the maximum x position reached
@@ -66,10 +78,7 @@ class EnhancedRewardWrapper(gym.Wrapper):
 
     def step(self, action):
         obs, reward, done, truncated, info = super().step(action)
-
         x_pos = info['x_pos'] 
-
-        # Bonus for new max x position
         if x_pos > self.max_x_pos:
             reward += self.new_max_x_bonus
             self.max_x_pos = x_pos
@@ -81,15 +90,16 @@ class EnhancedRewardWrapper(gym.Wrapper):
                 reward += self.stuck_penalty
                 self.stuck_counter = 0  # Reset counter after applying penalty
         else:
-            self.stuck_counter = 0  # Reset counter if Mario moved
+            self.stuck_counter = 0
 
-        self.last_x_pos = x_pos  # Update the last x position for the next step
+        self.last_x_pos = x_pos
 
         return obs, reward, done, truncated, info
 
 if __name__ == "__main__":
 # Helper function to create environment
     def make_env(env_id, rank):
+        """"Make a standard env with all wrappers"""
         def _init():
             env = gym.make(env_id, apply_api_compatibility=True)
             env = JoypadSpace(env, SIMPLE_MOVEMENT)
@@ -102,6 +112,7 @@ if __name__ == "__main__":
             return env
         return _init
     
+# Simple Call back to save the model every X steps: https://github.com/nicknochnack/MarioRL/blob/main/Mario%20Tutorial.ipynb
     class TrainAndLoggingCallback(BaseCallback):
         def __init__(self, check_freq, save_path, verbose=1):
             super(TrainAndLoggingCallback, self).__init__(verbose)
@@ -118,7 +129,8 @@ if __name__ == "__main__":
                 self.model.save(model_path)
             
             return True
-
+        
+# Standard SB3 Callback for 'best model' from https://stable-baselines3.readthedocs.io/en/master/guide/examples.html
     class SaveOnBestTrainingRewardCallback(BaseCallback):
         def __init__(self, check_freq: int, log_dir: str, verbose: int = 1):
             super(SaveOnBestTrainingRewardCallback, self).__init__(verbose)
@@ -149,14 +161,15 @@ if __name__ == "__main__":
             
 
 
-    CHECKPOINT_DIR = './train17/'
+    CHECKPOINT_DIR = './train/'
     LOG_DIR = './logs/'
     # Environment setup
 
-
+    # Multi Process Enviro
     env_id = 'SuperMarioBros-v0'
-    num_cpu = 2  # Number of processes to use
+    # num_cpu = 2  # Number of processes to use
     env = make_env(env_id, 0)()
+    # Adding Monitor wrapper to record training stats
     env = VecMonitor(DummyVecEnv([lambda: env]), LOG_DIR)
     env = VecMonitor(env, LOG_DIR)
 
@@ -166,10 +179,10 @@ if __name__ == "__main__":
 
     # Hyperparameters
     #PPO_3 2048, 0.00025
-    n_steps = 512
-    total_timesteps = 10000000000
+    n_steps = 512 # Tested with 128, 512, 2048
+    total_timesteps = 10000000000 # Set arbitrarily high number to train for as long as possible
 
-    # Initialize PPO algorithm with NatureCNN
+    # Initialize PPO algorithm with NatureCNN - predefined CNN architecture for an image space observation
     policy_kwargs = {
         "features_extractor_class": NatureCNN,
         "features_extractor_kwargs": {"features_dim": 512},
@@ -195,21 +208,22 @@ if __name__ == "__main__":
             print("Model not found. Creating a new one.")
     else:
         print("Creating a new model.")
+        # Learning Rate suggested 0.000001 - but training was slow
         model = PPO("CnnPolicy", env, policy_kwargs=policy_kwargs, verbose=1, 
                 tensorboard_log=LOG_DIR, learning_rate=0.00001, 
                 n_steps=512, device="cuda")
     print("PyTorch device:", model.device)
     model.policy.to('cuda')
 
-  #   new_n_steps = 512
-  #  model.lr_schedule = lambda _: new_learning_rate
+    #  model.lr_schedule = lambda _: new_learning_rate - is how to modify an existing models learning rate
     # Training the model
+
     model.learn(total_timesteps=total_timesteps, callback=[callback, callback1])
 
     # Save the model after training
     model.save("ppo_mario")
 
-    # Evaluate the trained model
+    # Evaluate the trained model - in reality it never gets to this point as training is stopped manually
     state = env.reset()
     for _ in range(1000):
         action, _ = model.predict(state)
