@@ -44,7 +44,7 @@ class CVAgent:
     SEQ_LENGTH = 11
 
     
-    def __init__(self, debug=None):
+    def __init__(self, debug=None, level='1-1'):
         if debug not in [None, 'console', 'detect']:
             raise ValueError("""Invalid Debugging method, Please choose from:\n
                              None: No debugging\n
@@ -52,10 +52,14 @@ class CVAgent:
                              detect: Show detection boxes (significantly slower)\n""")
         self.DEBUG = debug
         if(self.DEBUG is not None): print(f"Running in debug mode: {self.DEBUG}")
+        
+        self.jumping_hole = False
+        self.jumping_enemy = False
+        self.jumping_koopa = (False, 0)
 
-        level = "SuperMarioBros-1-1-v0"
-        if(self.DEBUG in ['detect']): self.env = gym.make(level, apply_api_compatibility=True)
-        else: self.env = gym.make(level, apply_api_compatibility=True, render_mode="human")
+        levelname = f"SuperMarioBros-{level}-v0"
+        if(self.DEBUG in ['detect']): self.env = gym.make(levelname, apply_api_compatibility=True)
+        else: self.env = gym.make(levelname, apply_api_compatibility=True, render_mode="human")
         self.env = gym.wrappers.GrayScaleObservation(self.env)
         
         self.env = JoypadSpace(self.env, SIMPLE_MOVEMENT)
@@ -167,7 +171,7 @@ class CVAgent:
                     # if block is not under mario, apply text
 
                     if(mario_locations and block[0][1] - mario_locations[0][0][1] < 0):
-                        cv.putText(frame, name, (pt2[0], pt1[1]), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3, color=1)
+                        cv.putText(frame, name, (pt2[0], pt1[1]), color=(255,255,255), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3)
             cv.imshow("DEBUG: Detections", frame)
             if cv.waitKey(1)&0xFF == ord('q'): pass
         
@@ -328,6 +332,7 @@ class CVAgent:
     #   - time taken to complete run (seconds)
     #   - reward score for run
     #   - number of steps in the run
+    #   - global x_position reached
     def play(self, metrics=False):
 
         obs = None
@@ -346,20 +351,19 @@ class CVAgent:
             obs, reward, terminated, truncated, info = self.env.step(action)
             run_score += reward
             done = terminated or truncated
-            if(info['x_pos'] >= 1200):
-                print(f"Reached x_pos of 1200 after {step} steps")
             if done:
-                if(metrics): runtime = (time.time_ns() - start) / 1000000000
+                if(metrics): runtime = (time.time_ns() - start) / 1000000000 # convert to seconds
                 if(self.DEBUG is not None): print(f"Reward for run: {run_score}")
                 break
             step += 1
         
-        # self.env.close() # Uncomment to end run after death
+        self.env.close() # Uncomment to end run after death
         if(metrics and done):
             data = {
                 'run-score': run_score,
                 'run-time': runtime,
                 'steps': step,
+                'x_pos': info['x_pos']
             }
             return data
         else: return

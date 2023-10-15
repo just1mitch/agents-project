@@ -1,6 +1,6 @@
 from cv_agent import CVAgent
 from time import time
-
+from pathlib import PurePath
 
 
 # ranges to test for each parameter
@@ -17,8 +17,8 @@ runs_per_spa = len(range(GOOMBA_test_range[0], GOOMBA_test_range[1], GOOMBA_test
 
 if(__name__ == "__main__"):
     agent = CVAgent(debug=None)
-    with open('./experiment-data/experiment_dump.tsv', 'w') as all:
-        with open('./experiment-data/averages_dump.tsv', 'w') as avg:
+    with open(PurePath('opencv-agent/experiment-data/level_1-1_dump.tsv'), 'w') as all:
+        with open(PurePath('opencv-agent/experiment-data/level_1-1_averages_dump.tsv'), 'w') as avg:
             all.write("STEPS_PER_ACTION\tGOOMBA_RANGE\tKOOPA_RANGE\tRUN_SCORE\tRUN_TIME\tSTEPS\n")
             avg.write("STEPS_PER_ACTION\tAVG_RUN_SCORE\tAVG_RUN_TIME\tAVG_STEPS\n")
 
@@ -31,6 +31,7 @@ if(__name__ == "__main__"):
                 }
                 for goomba in range(GOOMBA_test_range[0], GOOMBA_test_range[1], GOOMBA_test_range[2]):
                     for koopa in range(KOOPA_test_range[0], KOOPA_test_range[1], KOOPA_test_range[2]):
+                        agent.__init__()
                         agent.STEPS_PER_ACTION = spa
                         agent.GOOMBA_RANGE = goomba
                         agent.KOOPA_RANGE = koopa
