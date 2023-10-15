@@ -46,6 +46,7 @@ class CustomReshapeAndResizeObs(gym.ObservationWrapper):
         observation = cv2.resize(observation, self.shape, interpolation=cv2.INTER_AREA)
         # Normalize and reshape
         return np.expand_dims(observation.astype(np.float32) / 255.0, axis=0)
+
 # This wrapper removes the seed from the environment, which would otherwise be incompatible due to version differences
 class RemoveSeedWrapper(gym.Wrapper):
     """Remove seed"""
@@ -55,46 +56,46 @@ class RemoveSeedWrapper(gym.Wrapper):
         return super().reset(**kwargs)
 
 # Wrapper to enhance the reward function - successful in training without this.
-class EnhancedRewardWrapper(gym.Wrapper):
-    """Optional reward wrapper"""
-    def __init__(self, env, new_max_x_bonus=5, stuck_penalty=-3, stuck_threshold=100):
-        super(EnhancedRewardWrapper, self).__init__(env)
-        self.max_x_pos = float('-inf')  # Keep track of the maximum x position reached
-        self.last_x_pos = None  # Keep track of the last x position
-        self.stuck_counter = 0  # Counter to check if Mario is stuck
-        # Bonus for reaching a new maximum x position
-        self.new_max_x_bonus = new_max_x_bonus
-        # Penalty for staying in the same x position for too long
-        self.stuck_penalty = stuck_penalty
-        # Number of frames to consider Mario as stuck
-        self.stuck_threshold = stuck_threshold
+# class EnhancedRewardWrapper(gym.Wrapper):
+#     """Optional reward wrapper"""
+#     def __init__(self, env, new_max_x_bonus=5, stuck_penalty=-3, stuck_threshold=100):
+#         super(EnhancedRewardWrapper, self).__init__(env)
+#         self.max_x_pos = float('-inf')  # Keep track of the maximum x position reached
+#         self.last_x_pos = None  # Keep track of the last x position
+#         self.stuck_counter = 0  # Counter to check if Mario is stuck
+#         # Bonus for reaching a new maximum x position
+#         self.new_max_x_bonus = new_max_x_bonus
+#         # Penalty for staying in the same x position for too long
+#         self.stuck_penalty = stuck_penalty
+#         # Number of frames to consider Mario as stuck
+#         self.stuck_threshold = stuck_threshold
 
-    def reset(self, **kwargs):
-        obs = super().reset(**kwargs)
-        self.max_x_pos = float('-inf')
-        self.last_x_pos = None
-        self.stuck_counter = 0
-        return obs
+#     def reset(self, **kwargs):
+#         obs = super().reset(**kwargs)
+#         self.max_x_pos = float('-inf')
+#         self.last_x_pos = None
+#         self.stuck_counter = 0
+#         return obs
 
-    def step(self, action):
-        obs, reward, done, truncated, info = super().step(action)
-        x_pos = info['x_pos'] 
-        if x_pos > self.max_x_pos:
-            reward += self.new_max_x_bonus
-            self.max_x_pos = x_pos
+#     def step(self, action):
+#         obs, reward, done, truncated, info = super().step(action)
+#         x_pos = info['x_pos'] 
+#         if x_pos > self.max_x_pos:
+#             reward += self.new_max_x_bonus
+#             self.max_x_pos = x_pos
 
-        # Check if Mario is stuck
-        if x_pos == self.last_x_pos:
-            self.stuck_counter += 1
-            if self.stuck_counter >= self.stuck_threshold:
-                reward += self.stuck_penalty
-                self.stuck_counter = 0  # Reset counter after applying penalty
-        else:
-            self.stuck_counter = 0
+#         # Check if Mario is stuck
+#         if x_pos == self.last_x_pos:
+#             self.stuck_counter += 1
+#             if self.stuck_counter >= self.stuck_threshold:
+#                 reward += self.stuck_penalty
+#                 self.stuck_counter = 0  # Reset counter after applying penalty
+#         else:
+#             self.stuck_counter = 0
 
-        self.last_x_pos = x_pos
+#         self.last_x_pos = x_pos
 
-        return obs, reward, done, truncated, info
+#         return obs, reward, done, truncated, info
 
 if __name__ == "__main__":
 # Helper function to create environment
@@ -106,7 +107,7 @@ if __name__ == "__main__":
             env = GrayScaleObservation(env)
             env = ResizeObservation(env, 84)
             env = CustomReshapeAndResizeObs(env, shape=(84, 84))
-            env = EnhancedRewardWrapper(env)
+          #  env = EnhancedRewardWrapper(env)
             env = RemoveSeedWrapper(env)
             print(env.observation_space.shape)
             return env
@@ -173,7 +174,8 @@ if __name__ == "__main__":
     env = VecMonitor(DummyVecEnv([lambda: env]), LOG_DIR)
     env = VecMonitor(env, LOG_DIR)
 
-    # Frame stacking with 4 frames
+    # Frame stacking with 4 frames, 4 seems to work best.
+    # Noticed that 4 frames are stacked on the Width, not the channel. So the shape is (1, 84, 84*4) instead of (4, 84, 84)
     n_stack = 4
     env = VecFrameStack(env, n_stack=n_stack)
 
@@ -208,7 +210,7 @@ if __name__ == "__main__":
             print("Model not found. Creating a new one.")
     else:
         print("Creating a new model.")
-        # Learning Rate suggested 0.000001 - but training was slow
+        # Learning Rate suggested 0.000001 - but training was slow, final model produced with the following:
         model = PPO("CnnPolicy", env, policy_kwargs=policy_kwargs, verbose=1, 
                 tensorboard_log=LOG_DIR, learning_rate=0.00001, 
                 n_steps=512, device="cuda")

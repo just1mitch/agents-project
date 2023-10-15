@@ -7,6 +7,7 @@ from neural import MarioNet
 
 # Much of the agent is derived from the following sources:
 # https://pytorch.org/tutorials/intermediate/mario_rl_tutorial.html
+# https://github.com/pytorch/tutorials/blob/main/intermediate_source/mario_rl_tutorial.py
 # https://github.com/yfeng997/MadMario/blob/master/agent.py
 # https://www.statworx.com/en/content-hub/blog/using-reinforcement-learning-to-play-super-mario-bros-on-nes-using-tensorflow/
 
@@ -126,10 +127,14 @@ class Mario:
 
     def sync_Q_target(self):
         """Sync Q target value."""
-        # Implemented as soft update - this should speed up training
+        # Implemented as soft update - this should help stabiles the network
         # If a change is too drastic, it should help blend the new weights in between the two networks
+
+
         for target_param, online_param in zip(self.net.target.parameters(), self.net.online.parameters()):
             target_param.data.copy_(self.tau * online_param.data + (1.0 - self.tau) * target_param.data)
+        # Hard update sets the weights of the target network to the weights of the online network
+        #self.net.target.load_state_dict(self.net.online.state_dict())
 
     def learn(self):
         """Mario learns from experience."""

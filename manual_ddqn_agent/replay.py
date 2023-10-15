@@ -14,6 +14,7 @@ import cv2
 import argparse
 
 # Replay the trained model with a specified checkpoint using the --checkpoint flag
+# View the metrics on the screen using the --render flag
 # Much of the replay is derrived from: https://github.com/yfeng997/MadMario/blob/master/replay.py
 # Additional code is added to display the metrics on the screen and to display the current action being taken by the agent
 
