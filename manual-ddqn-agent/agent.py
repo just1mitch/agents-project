@@ -24,7 +24,7 @@ class Mario:
         self.batch_size = 64  # Number of experiences to sample
 
         self.exploration_rate = 1  # Initial exploration rate for the epsilon-greedy policy.
-        self.exploration_rate_decay = 0.99999975 #0.99999975  # Decay rate for exploratrion prob - lower the epsilon as it learns to exploit rather than explore
+        self.exploration_rate_decay = 0.9999975 #0.99999975  # Decay rate for exploratrion prob - lower the epsilon as it learns to exploit rather than explore
         
         # Experiment with different values, but 0.99999975 is the default value in the original tutorial and seems to work the best
         
@@ -132,10 +132,10 @@ class Mario:
         # Implemented as soft update - this should help stabiles the network
         # If a change is too drastic, it should help blend the new weights in between the two networks
 
-        for target_param, online_param in zip(self.net.target.parameters(), self.net.online.parameters()):
-            target_param.data.copy_(self.tau * online_param.data + (1.0 - self.tau) * target_param.data)
+        #for target_param, online_param in zip(self.net.target.parameters(), self.net.online.parameters()):
+         #   target_param.data.copy_(self.tau * online_param.data + (1.0 - self.tau) * target_param.data)
         # Hard update sets the weights of the target network to the weights of the online network
-        #self.net.target.load_state_dict(self.net.online.state_dict())
+        self.net.target.load_state_dict(self.net.online.state_dict())
 
     def learn(self):
         """Mario learns from experience."""

@@ -51,7 +51,7 @@ def log_to_file(log_filename, reward, steps, episode):
 def evaluate_model(file_path, episodes=75, visible=False):
     """Evaluate a model using the specified number of episodes"""
     # Create a standard Super Mario Bros environment - should be the same as the one used for training
-    env = gym.make('SuperMarioBros-1-1-v0', apply_api_compatibility=True, render_mode="rgb_array")
+    env = gym.make('SuperMarioBros-1-4-v0', apply_api_compatibility=True, render_mode="rgb_array")
     env = JoypadSpace(env, SIMPLE_MOVEMENT)
     env = RemoveSeedWrapper(env)
     env = GrayScaleObservation(env)

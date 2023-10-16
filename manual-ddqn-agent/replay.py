@@ -50,7 +50,7 @@ args = parser.parse_args()
 RENDER = args.render
 
 # Set up the environment with the wrappers - must be the same as main.py
-env = gym_super_mario_bros.make('SuperMarioBros-1-1-v0', apply_api_compatibility=True, render_mode='rgb_array') # Set render_mode to rgb_array to get the rendered frames as an array
+env = gym_super_mario_bros.make('SuperMarioBros-1-4-v0', apply_api_compatibility=True, render_mode='rgb_array') # Set render_mode to rgb_array to get the rendered frames as an array
 env = ClipScoreboardWrapper(env)
 env = JoypadSpace(
     env,
