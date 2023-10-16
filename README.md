@@ -69,7 +69,7 @@ The experiments are ran by the programs `run_level_1-1.py` and `run_level_2-1.py
   - `agent.GOOMBA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
   - `agent.KOOPA_RANGE` in the range (30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80)
 - `run_level_2-1.py` tests the successful combinations of parameters from the above test, on level 2-1.
-
+- `run_level_1-4.py` tests the successful combinations of parameters from the above test, on level 1-4.
 Each combination need only be tested once, as the openCV agent will play the exact same way each time a certain combination is provided. Output data is saved to tab separated files (.tsv) in the experiment-data folder.
 
 To generate an analysis of the experiment data for level 1-1, run `python analysis_1-1.py`  
