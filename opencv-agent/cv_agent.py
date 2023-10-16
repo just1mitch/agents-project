@@ -6,8 +6,6 @@ import cv2 as cv
 import time
 
 # Main game playing agent
-# Detection code adapted from 
-# https://github.com/vmorarji/Object-Detection-in-Mario/blob/master/detect.py
 class CVAgent:
     # A class holding information of the last state of the game
     # Allows heuristics to have a limited understanding 2of
@@ -145,8 +143,10 @@ class CVAgent:
     # In mario_locate_objects.py
     def __make_action(self, screen, info, step, prev_action):
 
-        # Secondary debugging screen to show openCV detection rectangles
+        # Debugging screen to show openCV detection rectangles
         # Means that screen is scanned for opponents every frame
+        # Detection code adapted from 
+        # https://github.com/vmorarji/Object-Detection-in-Mario/blob/master/detect.py
         if(self.DEBUG in ['detect']):
             mario_status = info["status"]
             object_locations = mario_locate_objects.locate_objects(screen, mario_status)
@@ -169,7 +169,6 @@ class CVAgent:
                     if(block[2] == 'question_block'): name = 'QB'
                     else: name = block[2]
                     # if block is not under mario, apply text
-
                     if(mario_locations and block[0][1] - mario_locations[0][0][1] < 0):
                         cv.putText(frame, name, (pt2[0], pt1[1]), color=(255,255,255), fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.3)
             cv.imshow("DEBUG: Detections", frame)
@@ -200,9 +199,7 @@ class CVAgent:
             # For example, the enemy_locations list might look like this:
             # [((161, 193), (16, 16), 'goomba'), ((175, 193), (16, 16), 'goomba')]
             self.last_state.enemy_locations = object_locations["enemy"]
-            # self.last_state.block_locations = object_locations["block"]
 
-            # Grabbed the info to store for next action, now return prev_action
             return prev_action
         
         elif(game_step == 0):
