@@ -77,7 +77,7 @@ To generate an analysis of the experiment data for level 2-1, run `python analys
 
 ## **DDQN Agent**
   <div class="column">
-    <img src="manual_ddqn_agent/pictures/gameplay.gif" alt="Mario Gif" width="256" height="390">
+    <img src="manual-ddqn-agent/pictures/gameplay.gif" alt="Mario Gif2" width="256" height="390">
   </div>
   <div class="row">
       
